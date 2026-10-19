@@ -34,6 +34,13 @@ jobs:
         shell: pwsh
         run: ./tools/check-version.ps1 -Tag "${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue) -and -not (Test-Path "${env:ProgramFiles(x86)}\NSIS\makensis.exe")) {
+            choco install nsis --yes --no-progress
+          }
+
       - name: Restore
         run: dotnet restore Kumo.slnx
 
@@ -53,6 +60,7 @@ jobs:
           -Publisher "${{ vars.KUMO_UPDATE_PUBLISHER }}"
           -SourceRevision "${{ github.sha }}"
           -OutDir artifacts/release
+          -RequireInstaller
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
