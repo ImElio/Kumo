@@ -1,0 +1,92 @@
+name: Release
+
+# Triggered only by a version tag pushed by a maintainer (v0.2.0, v0.2.0-beta.1, ...). Nothing here creates tags.
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Validate tag and version
+        id: version
+        shell: pwsh
+        run: ./tools/check-version.ps1 -Tag "${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Restore
+        run: dotnet restore Kumo.slnx
+
+      - name: Build
+        run: dotnet build Kumo.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test Kumo.slnx -c Release --no-build
+
+      # The update repository is the repository this workflow runs in, so a fork's builds only ever look at the fork.
+      # KUMO_UPDATE_PUBLISHER stays unset until releases are Authenticode-signed; without it Kumo never installs updates.
+      - name: Package
+        shell: pwsh
+        run: >
+          ./tools/package-release.ps1
+          -Repository "${{ github.repository }}"
+          -Publisher "${{ vars.KUMO_UPDATE_PUBLISHER }}"
+          -SourceRevision "${{ github.sha }}"
+          -OutDir artifacts/release
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: kumo-release-${{ steps.version.outputs.version }}
+          path: artifacts/release
+          if-no-files-found: error
+
+  # Publication waits for approval through the protected "release" environment and only creates a draft.
+  # A maintainer reviews the files and notes, then publishes the draft by hand.
+  draft:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: kumo-release-${{ needs.build.outputs.version }}
+          path: release
+
+      - name: Verify checksums
+        working-directory: release
+        run: sha256sum --check --strict SHA256SUMS.txt
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        run: |
+          flags=(--draft --verify-tag --generate-notes --title "Kumo $VERSION")
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "$TAG" "${flags[@]}" release/*

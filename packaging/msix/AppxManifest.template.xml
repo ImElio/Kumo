@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Microsoft Store package manifest for Kumo. INCOMPLETE ON PURPOSE.
+
+  The values in braces come from Partner Center once the product is reserved and must not be guessed:
+    {IDENTITY_NAME}       Package/Identity/Name, e.g. 12345Publisher.Kumo
+    {PUBLISHER}           Package/Identity/Publisher, e.g. CN=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+    {PUBLISHER_DISPLAY}   Publisher display name
+    {VERSION}             Major.Minor.Patch.0 from Directory.Build.props (Store packages require revision 0;
+                          only stable versions are submitted to the Store)
+    {ARCH}                x64 or arm64
+  See docs/distribution.md before using this file.
+-->
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap desktop rescap">
+  <Identity Name="{IDENTITY_NAME}" Publisher="{PUBLISHER}" Version="{VERSION}" ProcessorArchitecture="{ARCH}" />
+  <Properties>
+    <DisplayName>Kumo</DisplayName>
+    <PublisherDisplayName>{PUBLISHER_DISPLAY}</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+  <Applications>
+    <Application Id="Kumo" Executable="Kumo.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="Kumo" Description="A small radial file companion for Windows."
+                          BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <!-- Packaged apps cannot use the HKCU Run key; start-up would need the StartupTask API instead (not implemented yet). -->
+        <desktop:Extension Category="windows.startupTask" Executable="Kumo.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="KumoStartup" Enabled="false" DisplayName="Kumo" />
+        </desktop:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
