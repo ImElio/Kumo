@@ -106,7 +106,7 @@ public sealed class RadialMenuModel
     private static string CategoryDescription(OperationCategory category) => category switch
     {
         OperationCategory.Convert => "Convert to another format",
-        OperationCategory.Resize => "Resize images",
+        OperationCategory.Crop => "Crop images",
         OperationCategory.Compress => "Make files smaller",
         OperationCategory.Rotate => "Rotate images",
         OperationCategory.Merge => "Combine files",

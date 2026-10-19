@@ -1,5 +1,6 @@
 using System.Globalization;
 using Kumo.Core.Files;
+using Kumo.Core.Imaging;
 using Kumo.Core.Operations;
 using SkiaSharp;
 
@@ -71,50 +72,38 @@ internal sealed class ImageConvertOperation(FileKind target) : PerFileImageOpera
 }
 
 /// <summary>
-/// Resizes to the proportion chosen in the resize editor. The editor works on the first image; every image in the
-/// selection is scaled by the same factors, so a batch keeps its relative sizes.
+/// Cuts out the region chosen in the crop editor at full resolution. The region is stored as fractions of the first
+/// image, so every image in a selection is cropped the same way.
 /// </summary>
-internal sealed class ImageResizeOperation : PerFileImageOperation
+internal sealed class ImageCropOperation : PerFileImageOperation
 {
-    public const double MaxUpscale = 4;
+    public override string Id => "image.crop";
 
-    public override string Id => "image.resize";
+    public override OperationCategory Category => OperationCategory.Crop;
 
-    public override OperationCategory Category => OperationCategory.Resize;
+    public override string Label => "Crop";
 
-    public override string Label => "Resize";
+    public override string Description => "Crop…";
 
-    public override string Description => "Resize…";
-
-    public override InputRequirement Requirement => InputRequirement.Dimensions;
-
-    public static (int Width, int Height)? TargetSize(int width, int height, double scaleX, double scaleY)
-    {
-        if (!double.IsFinite(scaleX) || !double.IsFinite(scaleY) || scaleX <= 0 || scaleY <= 0)
-            throw OperationErrors.InvalidInput("Choose a size larger than zero.");
-        if (scaleX > MaxUpscale || scaleY > MaxUpscale)
-            throw OperationErrors.InvalidInput($"Kumo enlarges images at most {MaxUpscale:0}×.");
-        int targetWidth = Math.Max(1, (int)Math.Round(width * scaleX));
-        int targetHeight = Math.Max(1, (int)Math.Round(height * scaleY));
-        return targetWidth == width && targetHeight == height ? null : (targetWidth, targetHeight);
-    }
+    public override InputRequirement Requirement => InputRequirement.CropRegion;
 
     protected override async Task<OperationResult> ProcessAsync(InputFile input, OperationContext context, CancellationToken cancellationToken)
     {
-        double scaleX = context.Options.ScaleX ?? throw OperationErrors.InvalidInput("No size was chosen.");
-        double scaleY = context.Options.ScaleY ?? scaleX;
+        var region = context.Options.Crop ?? throw OperationErrors.InvalidInput("No crop area was chosen.");
+        if (!(region.Width > 0 && region.Height > 0 && region.X >= 0 && region.Y >= 0 && region.Right <= 1.0001 && region.Bottom <= 1.0001))
+            throw OperationErrors.InvalidInput("The crop area lies outside the image.");
+
         var kind = ImageCodec.SameFormatTarget(input.Kind);
         SKData data;
         string suffix;
         using (var bitmap = ImageCodec.Decode(input, context.Limits, cancellationToken))
         {
-            if (TargetSize(bitmap.Width, bitmap.Height, scaleX, scaleY) is not { } size)
-                return new OperationResult([], $"{input.Name} already has that size.");
-            if ((long)size.Width * size.Height > context.Limits.MaxImagePixels)
-                throw OperationErrors.TooLarge("The enlarged image would be too large.");
-            using var resized = ImageCodec.Resize(bitmap, size.Width, size.Height);
-            data = ImageCodec.Encode(resized, kind, kind == FileKind.WebP ? ImageConvertOperation.WebpQuality : ImageConvertOperation.JpegQuality);
-            suffix = $"({size.Width}×{size.Height})";
+            var (x, y, width, height) = CropRect.ToPixels(region, bitmap.Width, bitmap.Height);
+            if (width == bitmap.Width && height == bitmap.Height)
+                return new OperationResult([], $"The crop area covers all of {input.Name}.");
+            using var cropped = ImageCodec.Crop(bitmap, x, y, width, height);
+            data = ImageCodec.Encode(cropped, kind, kind == FileKind.WebP ? ImageConvertOperation.WebpQuality : ImageConvertOperation.JpegQuality);
+            suffix = $"(cropped {width}×{height})";
         }
         using (data)
         {

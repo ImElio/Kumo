@@ -40,10 +40,11 @@ oscillated rather than climbing.
 **Event-driven input.** A low-level mouse hook replaces a polling timer. The callback is a few comparisons when no
 shell drag is in progress, and the thread sleeps in `GetMessage` otherwise.
 
-**Software rendering.** `RenderOptions.ProcessRenderMode = SoftwareOnly`. With hardware rendering the first
+**Software rendering for the overlay.** The overlay window's composition target uses `RenderMode.SoftwareOnly`. With hardware rendering the first
 overlay created a Direct3D device whose buffers stayed committed: after 13 menu cycles private bytes were about
 145 MB with hardware rendering and 62 MB with software rendering. The overlay is small and static, so drawing it in
-software costs nothing noticeable.
+software costs nothing noticeable. Editor windows (crop, settings) keep hardware rendering: applying software rendering
+process-wide made dragging in the editor flicker.
 
 **Pre-building the overlay.** Creating the first WPF window takes about 400 ms (framework resources, fonts, the
 layered window). Kumo builds the overlay once at application-idle priority after start-up, which moves the first

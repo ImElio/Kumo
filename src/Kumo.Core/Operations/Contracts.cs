@@ -1,5 +1,6 @@
 using Kumo.Core.Diagnostics;
 using Kumo.Core.Files;
+using Kumo.Core.Imaging;
 
 namespace Kumo.Core.Operations;
 
@@ -7,7 +8,7 @@ namespace Kumo.Core.Operations;
 public enum OperationCategory
 {
     Convert,
-    Resize,
+    Crop,
     Compress,
     Rotate,
     Merge,
@@ -21,12 +22,11 @@ public enum InputRequirement
     None,
     PageRange,
     Password,
-    Dimensions,
+    CropRegion,
 }
 
-/// <param name="ScaleX">Horizontal scale chosen in the resize editor; each image in a batch gets the same proportion.</param>
-/// <param name="ScaleY">Vertical scale; equal to <paramref name="ScaleX"/> unless the aspect ratio was unlocked.</param>
-public sealed record OperationOptions(string? PageRange = null, string? Password = null, double? ScaleX = null, double? ScaleY = null)
+/// <param name="Crop">Region chosen in the crop editor as fractions of the image, so every image in a batch is cut the same way.</param>
+public sealed record OperationOptions(string? PageRange = null, string? Password = null, CropRect? Crop = null)
 {
     public static OperationOptions None { get; } = new();
 }

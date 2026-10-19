@@ -56,7 +56,7 @@ setting (reduced motion), light and dark mode, and per-monitor display scaling.
 | Files | Action | Result |
 | --- | --- | --- |
 | PNG, JPG, WEBP, BMP, GIF (first frame) | **Convert** to PNG, JPG, WEBP, BMP or PDF | New file in the chosen format. Transparency is placed on white for JPG and BMP. Camera orientation is applied. |
-| Images | **Resize** by hand | A preview window opens: drag the corner handle or type width and height (proportions locked by default, up to 4× larger). A batch is scaled by the same proportion. Same format; GIF results are saved as PNG. |
+| Images | **Crop** by hand | A preview window opens with a crop frame: drag corners, edges or the whole frame, or draw a new one; aspect presets Free, Original, 1:1, 4:3, 3:2, 16:9. The area is cut at full resolution; a batch gets the same area relative to each image. Same format; GIF results are saved as PNG. |
 | JPG, WEBP | **Compress**: High quality, Balanced or Smallest | Re-encoded copy. If it would not be smaller, nothing is saved. |
 | PNG | **Compress** (lossless optimisation) | Maximum PNG compression without changing pixels. |
 | Images | **Rotate** 90° right, 90° left or 180° | Rotated copy. JPG files are re-encoded at quality 92. |
@@ -81,7 +81,7 @@ Safety rules that apply to every action:
   specific messages.
 - "Keep original files" can be turned off; originals then go to the Recycle Bin after a successful result.
 
-Not supported yet: DOCX, audio, video, TIFF, HEIC, cropping, and PDF text extraction.
+Not supported yet: DOCX, audio, video, TIFF, HEIC, resizing by scale, and PDF text extraction.
 
 ## Settings
 

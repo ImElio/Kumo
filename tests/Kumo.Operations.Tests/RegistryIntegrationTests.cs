@@ -14,7 +14,7 @@ public class RegistryIntegrationTests
     [Fact]
     public void Png_offers_image_actions()
     {
-        Assert.Equal(["Convert", "Resize", "Compress", "Rotate"], Root(FileKind.Png));
+        Assert.Equal(["Convert", "Crop", "Compress", "Rotate"], Root(FileKind.Png));
     }
 
     [Fact]

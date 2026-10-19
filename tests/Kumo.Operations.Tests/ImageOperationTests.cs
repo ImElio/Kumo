@@ -1,4 +1,5 @@
 using Kumo.Core.Files;
+using Kumo.Core.Imaging;
 using Kumo.Core.Operations;
 using Kumo.Operations.Images;
 using SkiaSharp;
@@ -80,62 +81,68 @@ public sealed class ImageOperationTests : IDisposable
         Assert.True(new ImageConvertOperation(FileKind.Jpeg).Supports(source));
     }
 
-    [Theory]
-    [InlineData(0.5, 0.5, 400, 200, 200, 100)]
-    [InlineData(0.25, 0.25, 400, 200, 100, 50)]
-    [InlineData(1.5, 1.5, 40, 20, 60, 30)]
-    [InlineData(0.5, 1.0, 400, 200, 200, 200)]
-    public async Task Resize_applies_the_chosen_scale(double scaleX, double scaleY, int width, int height, int expectedWidth, int expectedHeight)
+    [Fact]
+    public async Task Crop_keeps_only_the_chosen_area_at_full_resolution()
     {
-        var source = _fixtures.Image($"resize-{scaleX}-{scaleY}-{width}.png", SKEncodedImageFormat.Png, width, height);
+        var source = _fixtures.Image("crop.png", SKEncodedImageFormat.Png, 400, 200);
 
-        var result = await Fixtures.Run(new ImageResizeOperation(), [source], new OperationOptions(ScaleX: scaleX, ScaleY: scaleY));
+        var result = await Fixtures.Run(new ImageCropOperation(), [source], new OperationOptions(Crop: new CropRect(0.5, 0.25, 0.5, 0.5)));
 
         string output = result.Outputs.Single();
+        Assert.EndsWith("(cropped 200×100).png", output);
         using var bitmap = Load(output);
-        Assert.Equal((expectedWidth, expectedHeight), (bitmap.Width, bitmap.Height));
-        Assert.EndsWith($"({expectedWidth}×{expectedHeight}).png", output);
-        AssertClose(SKColors.Red, bitmap.GetPixel(expectedWidth / 4, expectedHeight / 2));
+        Assert.Equal((200, 100), (bitmap.Width, bitmap.Height));
+        AssertClose(SKColors.Blue, bitmap.GetPixel(10, 50));
+        AssertClose(SKColors.Blue, bitmap.GetPixel(190, 50));
     }
 
     [Fact]
-    public async Task Batch_resize_keeps_each_image_proportional()
+    public async Task Crop_applies_the_same_relative_area_to_every_image()
     {
-        var wide = _fixtures.Image("wide.png", SKEncodedImageFormat.Png, 400, 200);
-        var tall = _fixtures.Image("tall.png", SKEncodedImageFormat.Png, 100, 300);
+        var wide = _fixtures.Image("crop-wide.png", SKEncodedImageFormat.Png, 400, 200);
+        var small = _fixtures.Image("crop-small.png", SKEncodedImageFormat.Png, 100, 50);
 
-        var result = await Fixtures.Run(new ImageResizeOperation(), [wide, tall], new OperationOptions(ScaleX: 0.5, ScaleY: 0.5));
+        var result = await Fixtures.Run(new ImageCropOperation(), [wide, small], new OperationOptions(Crop: new CropRect(0, 0, 0.5, 1)));
 
-        Assert.Equal(2, result.SucceededCount);
         using var first = Load(result.Outcomes[0].Outputs.Single());
         using var second = Load(result.Outcomes[1].Outputs.Single());
-        Assert.Equal((200, 100), (first.Width, first.Height));
-        Assert.Equal((50, 150), (second.Width, second.Height));
+        Assert.Equal((200, 200), (first.Width, first.Height));
+        Assert.Equal((50, 50), (second.Width, second.Height));
+        AssertClose(SKColors.Red, second.GetPixel(25, 25));
     }
 
     [Fact]
-    public async Task Resize_to_the_same_size_saves_nothing()
+    public async Task Crop_of_the_whole_image_saves_nothing()
     {
-        var source = _fixtures.Image("same-size.png", SKEncodedImageFormat.Png, 64, 32);
+        var source = _fixtures.Image("crop-all.png", SKEncodedImageFormat.Png);
 
-        var result = await Fixtures.Run(new ImageResizeOperation(), [source], new OperationOptions(ScaleX: 1, ScaleY: 1));
+        var result = await Fixtures.Run(new ImageCropOperation(), [source], new OperationOptions(Crop: new CropRect(0, 0, 1, 1)));
 
         var outcome = Assert.Single(result.Outcomes);
         Assert.True(outcome.Succeeded);
         Assert.Empty(outcome.Outputs);
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    [InlineData(5)]
-    public async Task Resize_rejects_invalid_scales(double scale)
+    [Fact]
+    public async Task Crop_outside_the_image_is_rejected()
     {
-        var source = _fixtures.Image($"bad-scale-{scale}.png", SKEncodedImageFormat.Png);
+        var source = _fixtures.Image("crop-bad.png", SKEncodedImageFormat.Png);
 
-        var result = await Fixtures.Run(new ImageResizeOperation(), [source], new OperationOptions(ScaleX: scale, ScaleY: scale));
+        var result = await Fixtures.Run(new ImageCropOperation(), [source], new OperationOptions(Crop: new CropRect(0.6, 0, 0.6, 1)));
 
         Assert.Equal(OperationErrorKind.InvalidInput, result.FirstFailure!.Error);
+    }
+
+    [Fact]
+    public async Task Crop_follows_exif_orientation()
+    {
+        var source = _fixtures.SidewaysJpeg("crop-sideways.jpg", 40, 20);
+
+        var result = await Fixtures.Run(new ImageCropOperation(), [source], new OperationOptions(Crop: new CropRect(0, 0, 1, 0.5)));
+
+        using var bitmap = Load(result.Outputs.Single());
+        Assert.Equal((20, 20), (bitmap.Width, bitmap.Height));
+        AssertClose(SKColors.Red, bitmap.GetPixel(10, 10));
     }
 
     [Fact]

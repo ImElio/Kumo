@@ -20,7 +20,7 @@ public static class KumoOperations
         new PdfRenderOperation(FileKind.Png),
         new PdfRenderOperation(FileKind.Jpeg),
 
-        new ImageResizeOperation(),
+        new ImageCropOperation(),
 
         new ImageCompressOperation(CompressionLevel.High),
         new ImageCompressOperation(CompressionLevel.Balanced),

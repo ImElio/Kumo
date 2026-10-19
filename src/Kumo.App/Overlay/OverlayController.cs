@@ -546,7 +546,7 @@ internal sealed class OverlayController : IDisposable
         int fileCount = files.Count;
 
         ImagePreview? preview = null;
-        if (entry.Requirement == InputRequirement.Dimensions)
+        if (entry.Requirement == InputRequirement.CropRegion)
         {
             _window.SetStatus("Opening the image…");
             try
@@ -562,7 +562,7 @@ internal sealed class OverlayController : IDisposable
             }
             if (_window == null || _phase != Phase.Menu)
                 return null;
-            _window.SetStatus("Choose the new size");
+            _window.SetStatus("Choose the area to keep");
         }
 
         var theme = Theme.WindowThemeMode(_app.Settings.Theme);
@@ -573,7 +573,7 @@ internal sealed class OverlayController : IDisposable
             {
                 InputRequirement.PageRange => InputDialog.AskPageRange(_window, theme, fileCount) is { } range ? new OperationOptions(PageRange: range) : null,
                 InputRequirement.Password => InputDialog.AskPassword(_window, theme, Kumo.Operations.KumoOperations.MinimumPasswordLength) is { } password ? new OperationOptions(Password: password) : null,
-                InputRequirement.Dimensions => ResizeWindow.Ask(_window, theme, preview!, files[0].Name, fileCount) is { } scale ? new OperationOptions(ScaleX: scale.ScaleX, ScaleY: scale.ScaleY) : null,
+                InputRequirement.CropRegion => CropWindow.Ask(_window, theme, preview!, files[0].Name, fileCount) is { } crop ? new OperationOptions(Crop: crop) : null,
                 _ => OperationOptions.None,
             };
         }

@@ -94,6 +94,15 @@ internal static class ImageCodec
         }
     }
 
+    public static SKBitmap Crop(SKBitmap source, int x, int y, int width, int height)
+    {
+        var result = new SKBitmap(new SKImageInfo(width, height, source.ColorType, source.AlphaType));
+        using var canvas = new SKCanvas(result);
+        canvas.Clear(SKColors.Transparent);
+        canvas.DrawBitmap(source, new SKRect(x, y, x + width, y + height), new SKRect(0, 0, width, height));
+        return result;
+    }
+
     public static SKData Encode(SKBitmap bitmap, FileKind target, int quality)
     {
         switch (target)

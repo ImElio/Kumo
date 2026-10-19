@@ -64,7 +64,15 @@ internal sealed class RadialOverlayWindow : Window
         Content = _root;
         ApplyLayout(layout, palette);
 
-        SourceInitialized += (_, _) => OverlayWindowInterop.ApplyOverlayStyles(Handle);
+        SourceInitialized += (_, _) =>
+        {
+            OverlayWindowInterop.ApplyOverlayStyles(Handle);
+            // The overlay is small and static, so software rendering costs nothing visible and spares a Direct3D
+            // device whose buffers would stay committed while Kumo idles. Editor windows keep hardware rendering
+            // so dragging stays smooth.
+            if (HwndSource.FromHwnd(Handle)?.CompositionTarget is { } target)
+                target.RenderMode = RenderMode.SoftwareOnly;
+        };
     }
 
     public RadialMenuView Menu { get; }

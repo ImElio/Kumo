@@ -60,7 +60,7 @@ public static class Summaries
         string verb = entry.Category switch
         {
             OperationCategory.Convert => "Converting",
-            OperationCategory.Resize => "Resizing",
+            OperationCategory.Crop => "Cropping",
             OperationCategory.Compress => "Compressing",
             OperationCategory.Rotate => "Rotating",
             OperationCategory.Merge => "Combining",

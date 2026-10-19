@@ -77,8 +77,8 @@ interception.
 | Finished | Kumo reacts (happy, concerned, neutral), the status bar shows the summary with Show and Close, and the overlay hides after 2.6 s (8 s for problems) unless the pointer is over it. |
 
 Operations that need input open a small window owned by the overlay: page ranges and passwords use a short
-dialog, and **Resize** opens a preview of the first image with a corner handle, a dashed outline of the original
-size and live pixel dimensions. It is never shown
+dialog, and **Crop** opens a preview of the first image with a crop frame (corner and edge handles, dimmed outside area,
+rule-of-thirds grid, aspect presets and the exact result size in pixels). It is never shown
 while a drag is in progress.
 
 ## Verification
