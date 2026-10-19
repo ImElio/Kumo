@@ -110,23 +110,23 @@ internal static class ImageCodec
             case FileKind.Png:
                 return EncodePng(bitmap, maximumCompression: false);
             case FileKind.Jpeg:
-            {
-                using var flat = FlattenOnWhite(bitmap);
-                using var pixmap = flat.PeekPixels();
-                return pixmap.Encode(new SKJpegEncoderOptions(quality, SKJpegEncoderDownsample.Downsample420, SKJpegEncoderAlphaOption.Ignore))
-                    ?? throw new InvalidOperationException("JPEG encoding failed.");
-            }
+                {
+                    using var flat = FlattenOnWhite(bitmap);
+                    using var pixmap = flat.PeekPixels();
+                    return pixmap.Encode(new SKJpegEncoderOptions(quality, SKJpegEncoderDownsample.Downsample420, SKJpegEncoderAlphaOption.Ignore))
+                        ?? throw new InvalidOperationException("JPEG encoding failed.");
+                }
             case FileKind.WebP:
-            {
-                using var pixmap = bitmap.PeekPixels();
-                return pixmap.Encode(new SKWebpEncoderOptions(SKWebpEncoderCompression.Lossy, quality))
-                    ?? throw new InvalidOperationException("WEBP encoding failed.");
-            }
+                {
+                    using var pixmap = bitmap.PeekPixels();
+                    return pixmap.Encode(new SKWebpEncoderOptions(SKWebpEncoderCompression.Lossy, quality))
+                        ?? throw new InvalidOperationException("WEBP encoding failed.");
+                }
             case FileKind.Bmp:
-            {
-                using var flat = FlattenOnWhite(bitmap);
-                return SKData.CreateCopy(BmpWriter.Write(flat));
-            }
+                {
+                    using var flat = FlattenOnWhite(bitmap);
+                    return SKData.CreateCopy(BmpWriter.Write(flat));
+                }
             default:
                 throw OperationErrors.Unsupported($"Saving as {target.DisplayName()} isn't supported.");
         }

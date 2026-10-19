@@ -108,39 +108,39 @@ public static class CropMath
         switch (handle)
         {
             case CropHandle.Left or CropHandle.Right:
-            {
-                double w = handle == CropHandle.Right ? s.Width + dx : s.Width - dx;
-                double maxW = handle == CropHandle.Right ? width - s.X : s.Right;
-                w = Math.Clamp(w, minWidth, Math.Max(minWidth, Math.Min(maxW, height * r)));
-                double h = w / r;
-                double x = handle == CropHandle.Right ? s.X : s.Right - w;
-                double y = Math.Clamp(s.CenterY - h / 2, 0, height - h);
-                return new CropRect(x, y, w, h);
-            }
+                {
+                    double w = handle == CropHandle.Right ? s.Width + dx : s.Width - dx;
+                    double maxW = handle == CropHandle.Right ? width - s.X : s.Right;
+                    w = Math.Clamp(w, minWidth, Math.Max(minWidth, Math.Min(maxW, height * r)));
+                    double h = w / r;
+                    double x = handle == CropHandle.Right ? s.X : s.Right - w;
+                    double y = Math.Clamp(s.CenterY - h / 2, 0, height - h);
+                    return new CropRect(x, y, w, h);
+                }
             case CropHandle.Top or CropHandle.Bottom:
-            {
-                double h = handle == CropHandle.Bottom ? s.Height + dy : s.Height - dy;
-                double maxH = handle == CropHandle.Bottom ? height - s.Y : s.Bottom;
-                h = Math.Clamp(h, minWidth / r, Math.Max(minWidth / r, Math.Min(maxH, width / r)));
-                double w = h * r;
-                double y = handle == CropHandle.Bottom ? s.Y : s.Bottom - h;
-                double x = Math.Clamp(s.CenterX - w / 2, 0, width - w);
-                return new CropRect(x, y, w, h);
-            }
+                {
+                    double h = handle == CropHandle.Bottom ? s.Height + dy : s.Height - dy;
+                    double maxH = handle == CropHandle.Bottom ? height - s.Y : s.Bottom;
+                    h = Math.Clamp(h, minWidth / r, Math.Max(minWidth / r, Math.Min(maxH, width / r)));
+                    double w = h * r;
+                    double y = handle == CropHandle.Bottom ? s.Y : s.Bottom - h;
+                    double x = Math.Clamp(s.CenterX - w / 2, 0, width - w);
+                    return new CropRect(x, y, w, h);
+                }
             default:
-            {
-                bool east = handle is CropHandle.TopRight or CropHandle.BottomRight;
-                bool south = handle is CropHandle.BottomLeft or CropHandle.BottomRight;
-                double anchorX = east ? s.X : s.Right;
-                double anchorY = south ? s.Y : s.Bottom;
-                double wFromX = east ? s.Width + dx : s.Width - dx;
-                double wFromY = (south ? s.Height + dy : s.Height - dy) * r;
-                double w = Math.Abs(dx) >= Math.Abs(dy * r) ? wFromX : wFromY;
-                double maxW = Math.Min(east ? width - anchorX : anchorX, (south ? height - anchorY : anchorY) * r);
-                w = Math.Clamp(w, minWidth, Math.Max(minWidth, maxW));
-                double h = w / r;
-                return new CropRect(east ? anchorX : anchorX - w, south ? anchorY : anchorY - h, w, h);
-            }
+                {
+                    bool east = handle is CropHandle.TopRight or CropHandle.BottomRight;
+                    bool south = handle is CropHandle.BottomLeft or CropHandle.BottomRight;
+                    double anchorX = east ? s.X : s.Right;
+                    double anchorY = south ? s.Y : s.Bottom;
+                    double wFromX = east ? s.Width + dx : s.Width - dx;
+                    double wFromY = (south ? s.Height + dy : s.Height - dy) * r;
+                    double w = Math.Abs(dx) >= Math.Abs(dy * r) ? wFromX : wFromY;
+                    double maxW = Math.Min(east ? width - anchorX : anchorX, (south ? height - anchorY : anchorY) * r);
+                    w = Math.Clamp(w, minWidth, Math.Max(minWidth, maxW));
+                    double h = w / r;
+                    return new CropRect(east ? anchorX : anchorX - w, south ? anchorY : anchorY - h, w, h);
+                }
         }
     }
 
