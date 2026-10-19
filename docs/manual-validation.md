@@ -43,7 +43,7 @@ actually executed. Last updated 2026-10-19 on Windows 11 Pro 10.0.26200, one mon
 
 | Check | How | Status |
 | --- | --- | --- |
-| Local build shows "update checks aren't available" and no tray item | Settings → Updates | Checked (screenshot) |
+| Local build shows "update checks aren't available" | Settings → Updates | Checked (screenshot); the hidden tray item was not checked by hand |
 | Real check against a published release | CI build of a tagged release with at least two published releases | Pending (no repository or releases yet) |
 | Beta channel picks the highest beta/rc | Same, with pre-releases | Pending (unit-tested with mocked HTTP) |
 | Rate limit message and back-off | Exhaust the unauthenticated limit | Pending (unit-tested) |
