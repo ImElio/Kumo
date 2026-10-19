@@ -248,6 +248,7 @@ internal sealed class OverlayController : IDisposable
         window.ShowAt(point);
         _app.SetPointerTracking(false);
         _app.Log.Info("Overlay activated", ("x", point.X), ("y", point.Y), ("ms", Stopwatch.GetElapsedTime(started).TotalMilliseconds));
+        _app.ConsiderUpdateCheck();
     }
 
     private void OnDragEnter(object sender, DragEventArgs e)

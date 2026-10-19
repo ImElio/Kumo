@@ -10,4 +10,14 @@
     <Copyright>Copyright (c) 2026 ImElio</Copyright>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
+
+  <!--
+    Update source, fixed at build time. Both are empty in local builds, which disables update checks and installation.
+    CI sets KumoUpdateRepository to the repository it builds from (github.repository); KumoUpdatePublisher is the exact
+    certificate subject of the installer signing certificate and stays empty until real signing exists.
+  -->
+  <PropertyGroup>
+    <KumoUpdateRepository Condition="'$(KumoUpdateRepository)' == ''"></KumoUpdateRepository>
+    <KumoUpdatePublisher Condition="'$(KumoUpdatePublisher)' == ''"></KumoUpdatePublisher>
+  </PropertyGroup>
 </Project>

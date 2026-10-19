@@ -67,6 +67,12 @@
               <TextBlock Text="Files" VerticalAlignment="Center" />
             </StackPanel>
           </ListBoxItem>
+          <ListBoxItem Tag="Updates">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock FontFamily="{StaticResource KumoGlyphs}" Text="&#xE895;" FontSize="16" Width="28" VerticalAlignment="Center" />
+              <TextBlock Text="Updates" VerticalAlignment="Center" />
+            </StackPanel>
+          </ListBoxItem>
           <ListBoxItem Tag="Advanced">
             <StackPanel Orientation="Horizontal">
               <TextBlock FontFamily="{StaticResource KumoGlyphs}" Text="&#xE90F;" FontSize="16" Width="28" VerticalAlignment="Center" />
@@ -214,6 +220,42 @@
                 </StackPanel>
               </DockPanel>
             </Border>
+          </StackPanel>
+
+          <StackPanel x:Name="UpdatesPage" Visibility="Collapsed">
+            <TextBlock Text="Updates" Style="{StaticResource PageTitle}" />
+            <Border Style="{StaticResource Card}">
+              <DockPanel>
+                <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE946;" />
+                <Button x:Name="CheckUpdatesButton" Style="{StaticResource CardControl}" Content="Check for updates" MinWidth="150" Click="OnCheckUpdates" />
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock x:Name="CurrentVersionText" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="InstallationText" Style="{StaticResource CardDescription}" />
+                </StackPanel>
+              </DockPanel>
+            </Border>
+            <StackPanel x:Name="UpdateControls">
+              <Border Style="{StaticResource Card}">
+                <DockPanel>
+                  <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE8AB;" />
+                  <ComboBox x:Name="UpdateChannelBox" Style="{StaticResource CardControl}" MinWidth="200" AutomationProperties.Name="Update channel" />
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource CardTitle}" Text="Update channel" />
+                    <TextBlock Style="{StaticResource CardDescription}" Text="Beta adds release candidates and betas before they become stable." />
+                  </StackPanel>
+                </DockPanel>
+              </Border>
+              <Border Style="{StaticResource Card}">
+                <DockPanel>
+                  <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE823;" />
+                  <CheckBox x:Name="AutomaticUpdates" Style="{StaticResource CardControl}" AutomationProperties.Name="Check for updates automatically" />
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource CardTitle}" Text="Check for updates automatically" />
+                    <TextBlock Style="{StaticResource CardDescription}" Text="At most once a day, from GitHub Releases. Nothing about you or your files is sent." />
+                  </StackPanel>
+                </DockPanel>
+              </Border>
+            </StackPanel>
           </StackPanel>
 
           <StackPanel x:Name="AdvancedPage" Visibility="Collapsed">

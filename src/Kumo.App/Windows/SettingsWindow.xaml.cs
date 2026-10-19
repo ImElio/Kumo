@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Kumo.Core.Settings;
+using Kumo.Core.Updates;
 using Microsoft.Win32;
 
 namespace Kumo.App.Windows;
@@ -15,13 +16,16 @@ internal sealed record Choice<T>(string Label, T Value)
 
 internal sealed record SettingsResult(KumoSettings Settings, bool StartWithWindows);
 
+/// <param name="Description">Installation source and who manages updates, shown under the version.</param>
+internal sealed record UpdateSummary(string Version, string Description, bool CanCheck, Action CheckNow);
+
 public partial class SettingsWindow : Window
 {
     private readonly KumoSettings _settings;
     private readonly string _logsDirectory;
     private string _hotkey;
 
-    internal SettingsWindow(KumoSettings settings, bool startWithWindows, string logsDirectory)
+    internal SettingsWindow(KumoSettings settings, bool startWithWindows, string logsDirectory, UpdateSummary updates)
     {
         InitializeComponent();
         _settings = settings.Clone();
@@ -49,10 +53,21 @@ public partial class SettingsWindow : Window
         PreserveOriginals.IsChecked = _settings.PreserveOriginals;
         DiagnosticLogging.IsChecked = _settings.DiagnosticLogging;
 
-        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        SidebarVersion.Text = version is null ? string.Empty : $"Version {version.Major}.{version.Minor}.{version.Build}";
+        SidebarVersion.Text = $"Version {Updates.UpdateCoordinator.DisplayVersion()}";
         Navigation.SelectedIndex = 0;
+
+        Fill(UpdateChannelBox, [new("Stable", UpdateChannel.Stable), new Choice<UpdateChannel>("Beta", UpdateChannel.Beta)], _settings.UpdateChannel);
+        AutomaticUpdates.IsChecked = _settings.AutomaticUpdateChecks;
+        CurrentVersionText.Text = $"Kumo {updates.Version}";
+        InstallationText.Text = updates.Description;
+        UpdateControls.Visibility = updates.CanCheck ? Visibility.Visible : Visibility.Collapsed;
+        CheckUpdatesButton.Visibility = updates.CanCheck ? Visibility.Visible : Visibility.Collapsed;
+        _checkForUpdates = updates.CheckNow;
     }
+
+    private readonly Action _checkForUpdates;
+
+    private void OnCheckUpdates(object sender, RoutedEventArgs e) => _checkForUpdates();
 
     internal SettingsResult? Result { get; private set; }
 
@@ -144,6 +159,8 @@ public partial class SettingsWindow : Window
         _settings.Collisions = Selected<CollisionBehavior>(CollisionBox);
         _settings.MaxConcurrentOperations = Selected<int>(ConcurrencyBox);
         _settings.DiagnosticLogging = DiagnosticLogging.IsChecked == true;
+        _settings.UpdateChannel = Selected<UpdateChannel>(UpdateChannelBox);
+        _settings.AutomaticUpdateChecks = AutomaticUpdates.IsChecked == true;
 
         Result = new SettingsResult(_settings.Normalize(), StartWithWindows.IsChecked == true);
         Close();
@@ -160,5 +177,6 @@ public partial class SettingsWindow : Window
         InteractionPage.Visibility = page == "Interaction" ? Visibility.Visible : Visibility.Collapsed;
         FilesPage.Visibility = page == "Files" ? Visibility.Visible : Visibility.Collapsed;
         AdvancedPage.Visibility = page == "Advanced" ? Visibility.Visible : Visibility.Collapsed;
+        UpdatesPage.Visibility = page == "Updates" ? Visibility.Visible : Visibility.Collapsed;
     }
 }

@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Threading;
 using Kumo.App.Overlay;
+using Kumo.App.Updates;
+using Kumo.Core.Updates;
 using Kumo.App.Windows;
 using Kumo.Core.Diagnostics;
 using Kumo.Core.Files;
@@ -22,9 +24,12 @@ internal sealed class KumoApplication : Application
         Open = 1,
         Settings,
         StartWithWindows,
+        CheckForUpdates,
         About,
         Exit,
     }
+
+    private static readonly TimeSpan FirstUpdateCheckDelay = TimeSpan.FromSeconds(30);
 
     private readonly SingleInstance _instance;
     private readonly string[] _startupArguments;
@@ -38,6 +43,9 @@ internal sealed class KumoApplication : Application
     private OverlayController? _menu;
     private SettingsWindow? _settingsWindow;
     private AboutWindow? _aboutWindow;
+    private UpdateCoordinator? _updates;
+    private UpdateWindow? _updateWindow;
+    private UpdateRelease? _announcedUpdate;
 
     public KumoApplication(SingleInstance instance, string[] startupArguments)
     {
@@ -52,6 +60,8 @@ internal sealed class KumoApplication : Application
 
     internal Log Log => _log;
 
+    private bool UpdatesUsable => _updates?.Service.Capability is UpdateCapability.NotifyOnly or UpdateCapability.InstallVerified;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -64,7 +74,10 @@ internal sealed class KumoApplication : Application
         };
 
         _log.MinimumLevel = _settings.DiagnosticLogging ? LogLevel.Debug : LogLevel.Info;
-        _log.Info("Kumo started", ("version", typeof(KumoApplication).Assembly.GetName().Version?.ToString()), ("pid", Environment.ProcessId));
+        _updates = new UpdateCoordinator(_log, AppPaths.Root, () => _settings.UpdateChannel);
+        _updates.CleanUpDownloads();
+        _log.Info("Kumo started", ("version", _updates.Environment.CurrentVersion.ToString()), ("pid", Environment.ProcessId),
+            ("installation", _updates.Environment.Installation.ToString()), ("updates", _updates.Service.Capability.ToString()));
 
         _menu = new OverlayController(this, new OperationRegistry(KumoOperations.CreateAll()),
             new OperationExecutor(_log, new ShellRecycleBin()), new SignatureFileTypeResolver());
@@ -77,7 +90,9 @@ internal sealed class KumoApplication : Application
         _tray.Invoked += OpenKumo;
         _tray.NotificationClicked += () =>
         {
-            if (_menu?.LastOutput is { } output)
+            if (_announcedUpdate is { } update)
+                ShowUpdates(update);
+            else if (_menu?.LastOutput is { } output)
                 OverlayController.Reveal(output);
         };
         _tray.Show();
@@ -103,11 +118,81 @@ internal sealed class KumoApplication : Application
 
         HandleArguments(_startupArguments, fromAnotherLaunch: false);
         Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => _menu.Prewarm());
+        ScheduleFirstUpdateCheck();
+    }
+
+    /// <summary>
+    /// Runs the automatic check if it is due. Called shortly after start-up and whenever Kumo is used, so a long-running
+    /// instance still checks about once a day without keeping a timer alive. UpdateService enforces the 24-hour limit.
+    /// </summary>
+    internal async void ConsiderUpdateCheck()
+    {
+        if (!_settings.AutomaticUpdateChecks || !UpdatesUsable || _updates == null)
+            return;
+        try
+        {
+            var result = await _updates.Service.CheckAsync(manual: false, CancellationToken.None);
+            if (result.Release is { } release && _updates.Service.ShouldNotify(result) && Notify($"Kumo {release.Version.ToShortString()} is available", "Click to see what's new.", TrayNotificationKind.Info))
+            {
+                _announcedUpdate = release;
+                _updates.Service.MarkNotified(release.Version);
+            }
+        }
+        catch (Exception ex) when (ex is UpdateException or System.Net.Http.HttpRequestException or System.IO.IOException)
+        {
+            _log.Warning("Automatic update check failed", ("detail", ex.Message));
+        }
+    }
+
+    private void ScheduleFirstUpdateCheck()
+    {
+        var timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle) { Interval = FirstUpdateCheckDelay };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            ConsiderUpdateCheck();
+        };
+        timer.Start();
+    }
+
+    private UpdateSummary DescribeUpdates()
+    {
+        var environment = _updates!.Environment;
+        string source = InstallationSource.Describe(environment.Installation);
+        string description = _updates.Service.Capability switch
+        {
+            UpdateCapability.StoreManaged => "Updates managed by Microsoft Store.",
+            UpdateCapability.Unconfigured => $"{source} · update checks aren't available in this build.",
+            UpdateCapability.InstallVerified => $"{source} · updates are downloaded, verified and installed by Kumo.",
+            _ when environment.Installation == InstallationKind.Portable => $"{source} · new versions are announced; replace the folder to update.",
+            _ => $"{source} · new versions are announced and open the download page.",
+        };
+        return new UpdateSummary(UpdateCoordinator.DisplayVersion(), description, UpdatesUsable, () => ShowUpdates());
+    }
+
+    internal void ShowUpdates(UpdateRelease? release = null)
+    {
+        if (_updates == null || !UpdatesUsable)
+            return;
+        if (_updateWindow == null)
+        {
+            _updateWindow = new UpdateWindow(_updates, () => _menu?.HasRunningJobs == true, Shutdown);
+            ApplyWindowTheme(_updateWindow);
+            _updateWindow.Closed += (_, _) => _updateWindow = null;
+            _updateWindow.Show();
+        }
+        _updateWindow.Activate();
+        _announcedUpdate = null;
+        if (release != null)
+            _updateWindow.ShowAvailable(release);
+        else
+            _ = _updateWindow.CheckAsync();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         _menu?.Dispose();
+        _updates?.Dispose();
         _monitor?.Dispose();
         _hotkey?.Dispose();
         _tray?.Dispose();
@@ -116,7 +201,7 @@ internal sealed class KumoApplication : Application
         base.OnExit(e);
     }
 
-    internal void Notify(string title, string text, TrayNotificationKind kind)
+    internal bool Notify(string title, string text, TrayNotificationKind kind)
     {
         bool allowed = _settings.Notifications switch
         {
@@ -126,6 +211,7 @@ internal sealed class KumoApplication : Application
         };
         if (allowed)
             _tray?.ShowNotification(title, text, kind);
+        return allowed && _tray?.IsVisible == true;
     }
 
     internal void SetPointerTracking(bool enabled)
@@ -229,6 +315,7 @@ internal sealed class KumoApplication : Application
         TrayMenuItem.Separator,
         new((int)TrayCommand.StartWithWindows, "Start with Windows", Checked: AutoStart.IsEnabled(AppPaths.Executable)),
         TrayMenuItem.Separator,
+        .. (UpdatesUsable ? [new TrayMenuItem((int)TrayCommand.CheckForUpdates, "Check for updates…")] : Array.Empty<TrayMenuItem>()),
         new((int)TrayCommand.About, "About Kumo"),
         new((int)TrayCommand.Exit, "Exit"),
     ];
@@ -245,6 +332,9 @@ internal sealed class KumoApplication : Application
                 break;
             case TrayCommand.StartWithWindows:
                 SetAutoStart(!AutoStart.IsEnabled(AppPaths.Executable));
+                break;
+            case TrayCommand.CheckForUpdates:
+                ShowUpdates();
                 break;
             case TrayCommand.About:
                 ShowAbout();
@@ -277,7 +367,7 @@ internal sealed class KumoApplication : Application
             return;
         }
 
-        _settingsWindow = new SettingsWindow(_settings, AutoStart.IsEnabled(AppPaths.Executable), AppPaths.Logs);
+        _settingsWindow = new SettingsWindow(_settings, AutoStart.IsEnabled(AppPaths.Executable), AppPaths.Logs, DescribeUpdates());
         ApplyWindowTheme(_settingsWindow);
         _settingsWindow.Closed += (_, _) =>
         {
