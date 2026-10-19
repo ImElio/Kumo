@@ -2,10 +2,12 @@
   <Folder Name="/src/">
     <Project Path="src/Kumo.App/Kumo.App.csproj" />
     <Project Path="src/Kumo.Core/Kumo.Core.csproj" />
+    <Project Path="src/Kumo.Operations/Kumo.Operations.csproj" />
     <Project Path="src/Kumo.Windows/Kumo.Windows.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kumo.Core.Tests/Kumo.Core.Tests.csproj" />
+    <Project Path="tests/Kumo.Operations.Tests/Kumo.Operations.Tests.csproj" />
     <Project Path="tests/Kumo.Windows.Tests/Kumo.Windows.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">

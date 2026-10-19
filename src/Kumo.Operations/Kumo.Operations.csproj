@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <RootNamespace>Kumo.Operations</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kumo.Operations.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kumo.Core\Kumo.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 6.2.4 is the last MIT-licensed PDFsharp release; 6.5.0 and later are AGPL-3.0. Do not upgrade without a licensing decision. -->
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+    <!-- PDFsharp 6.5 depends on System.Security.Cryptography.Pkcs 8.0.1, which has published advisories. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
+
+</Project>
