@@ -76,7 +76,9 @@ interception.
 | Working | The ring disappears; the hub shows a determinate progress ring, the status bar "Converting 2 of 5…" and Cancel. |
 | Finished | Kumo reacts (happy, concerned, neutral), the status bar shows the summary with Show and Close, and the overlay hides after 2.6 s (8 s for problems) unless the pointer is over it. |
 
-Operations that need input (page ranges, passwords) open a small dialog owned by the overlay. It is never shown
+Operations that need input open a small window owned by the overlay: page ranges and passwords use a short
+dialog, and **Resize** opens a preview of the first image with a corner handle, a dashed outline of the original
+size and live pixel dimensions. It is never shown
 while a drag is in progress.
 
 ## Verification

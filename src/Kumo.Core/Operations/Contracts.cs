@@ -21,9 +21,12 @@ public enum InputRequirement
     None,
     PageRange,
     Password,
+    Dimensions,
 }
 
-public sealed record OperationOptions(string? PageRange = null, string? Password = null)
+/// <param name="ScaleX">Horizontal scale chosen in the resize editor; each image in a batch gets the same proportion.</param>
+/// <param name="ScaleY">Vertical scale; equal to <paramref name="ScaleX"/> unless the aspect ratio was unlocked.</param>
+public sealed record OperationOptions(string? PageRange = null, string? Password = null, double? ScaleX = null, double? ScaleY = null)
 {
     public static OperationOptions None { get; } = new();
 }

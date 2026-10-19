@@ -17,7 +17,7 @@ internal abstract class PerFileImageOperation : IFileOperation
 
     public bool IsCombined => false;
 
-    public InputRequirement Requirement => InputRequirement.None;
+    public virtual InputRequirement Requirement => InputRequirement.None;
 
     public virtual bool Supports(InputFile file) => ImageCodec.CanDecode(file.Kind);
 
@@ -70,44 +70,54 @@ internal sealed class ImageConvertOperation(FileKind target) : PerFileImageOpera
     }
 }
 
-internal enum ResizeMode
+/// <summary>
+/// Resizes to the proportion chosen in the resize editor. The editor works on the first image; every image in the
+/// selection is scaled by the same factors, so a batch keeps its relative sizes.
+/// </summary>
+internal sealed class ImageResizeOperation : PerFileImageOperation
 {
-    Percent,
-    LongEdge,
-}
+    public const double MaxUpscale = 4;
 
-internal sealed class ImageResizeOperation(ResizeMode mode, int value) : PerFileImageOperation
-{
-    public override string Id => $"image.resize.{mode.ToString().ToLowerInvariant()}.{value}";
+    public override string Id => "image.resize";
 
     public override OperationCategory Category => OperationCategory.Resize;
 
-    public override string Label => mode == ResizeMode.Percent ? $"{value}%" : $"{value} px";
+    public override string Label => "Resize";
 
-    public override string Description => mode == ResizeMode.Percent ? $"Resize to {value}%" : $"Fit within {value} pixels";
+    public override string Description => "Resize…";
 
-    public (int Width, int Height)? TargetSize(int width, int height)
+    public override InputRequirement Requirement => InputRequirement.Dimensions;
+
+    public static (int Width, int Height)? TargetSize(int width, int height, double scaleX, double scaleY)
     {
-        double scale = mode == ResizeMode.Percent ? value / 100.0 : (double)value / Math.Max(width, height);
-        if (scale >= 1)
-            return null;
-        return (Math.Max(1, (int)Math.Round(width * scale)), Math.Max(1, (int)Math.Round(height * scale)));
+        if (!double.IsFinite(scaleX) || !double.IsFinite(scaleY) || scaleX <= 0 || scaleY <= 0)
+            throw OperationErrors.InvalidInput("Choose a size larger than zero.");
+        if (scaleX > MaxUpscale || scaleY > MaxUpscale)
+            throw OperationErrors.InvalidInput($"Kumo enlarges images at most {MaxUpscale:0}×.");
+        int targetWidth = Math.Max(1, (int)Math.Round(width * scaleX));
+        int targetHeight = Math.Max(1, (int)Math.Round(height * scaleY));
+        return targetWidth == width && targetHeight == height ? null : (targetWidth, targetHeight);
     }
 
     protected override async Task<OperationResult> ProcessAsync(InputFile input, OperationContext context, CancellationToken cancellationToken)
     {
+        double scaleX = context.Options.ScaleX ?? throw OperationErrors.InvalidInput("No size was chosen.");
+        double scaleY = context.Options.ScaleY ?? scaleX;
         var kind = ImageCodec.SameFormatTarget(input.Kind);
         SKData data;
+        string suffix;
         using (var bitmap = ImageCodec.Decode(input, context.Limits, cancellationToken))
         {
-            if (TargetSize(bitmap.Width, bitmap.Height) is not { } size)
-                return new OperationResult([], $"{input.Name} is already within {value} pixels.");
+            if (TargetSize(bitmap.Width, bitmap.Height, scaleX, scaleY) is not { } size)
+                return new OperationResult([], $"{input.Name} already has that size.");
+            if ((long)size.Width * size.Height > context.Limits.MaxImagePixels)
+                throw OperationErrors.TooLarge("The enlarged image would be too large.");
             using var resized = ImageCodec.Resize(bitmap, size.Width, size.Height);
             data = ImageCodec.Encode(resized, kind, kind == FileKind.WebP ? ImageConvertOperation.WebpQuality : ImageConvertOperation.JpegQuality);
+            suffix = $"({size.Width}×{size.Height})";
         }
         using (data)
         {
-            string suffix = mode == ResizeMode.Percent ? $"({value}%)" : $"({value}px)";
             string path = await ImageCodec.WriteAsync(context.Outputs, context.Outputs.DirectoryFor(input), Named(input, suffix, kind), data, cancellationToken).ConfigureAwait(false);
             return OperationResult.Of(path);
         }

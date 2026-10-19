@@ -1,0 +1,52 @@
+<Window x:Class="Kumo.App.Windows.ResizeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Resize"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="20,16,20,16">
+    <Grid DockPanel.Dock="Bottom" Margin="0,14,0,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBox x:Name="WidthBox" Width="76" TextAlignment="Right" AutomationProperties.Name="Width in pixels" />
+        <TextBlock Text="×" Margin="8,0" VerticalAlignment="Center" />
+        <TextBox x:Name="HeightBox" Width="76" TextAlignment="Right" AutomationProperties.Name="Height in pixels" />
+        <TextBlock Text="px" Margin="6,0,14,0" VerticalAlignment="Center" Opacity="0.72" />
+        <CheckBox x:Name="KeepProportions" Content="Keep proportions" IsChecked="True" VerticalAlignment="Center" />
+      </StackPanel>
+      <StackPanel Grid.Column="2" Orientation="Horizontal">
+        <Button x:Name="OriginalButton" Content="Original size" MinWidth="104" Click="OnOriginal" />
+        <Button x:Name="SaveButton" Content="Save" MinWidth="88" Margin="8,0,0,0" IsDefault="True" Click="OnSave" />
+        <Button Content="Cancel" MinWidth="88" Margin="8,0,0,0" IsCancel="True" />
+      </StackPanel>
+    </Grid>
+
+    <TextBlock x:Name="Summary" DockPanel.Dock="Bottom" Margin="0,10,0,0" Opacity="0.72" FontSize="12" TextWrapping="Wrap"
+               AutomationProperties.LiveSetting="Polite" />
+
+    <Border x:Name="StageFrame" CornerRadius="8" Background="#14808080" ClipToBounds="True">
+      <Canvas x:Name="Stage" Width="640" Height="420">
+        <Rectangle x:Name="OriginalOutline" StrokeThickness="1" StrokeDashArray="4 3" Opacity="0.6" IsHitTestVisible="False" />
+        <Image x:Name="Picture" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality" />
+        <Border x:Name="SizeTag" CornerRadius="6" Padding="8,3" Background="#CC202020" IsHitTestVisible="False">
+          <TextBlock x:Name="SizeText" Foreground="White" FontSize="12" />
+        </Border>
+        <Thumb x:Name="Handle" Width="18" Height="18" Cursor="SizeNWSE" DragDelta="OnHandleDrag"
+               AutomationProperties.Name="Resize handle">
+          <Thumb.Template>
+            <ControlTemplate TargetType="Thumb">
+              <Ellipse Fill="#F28A30" Stroke="White" StrokeThickness="2" />
+            </ControlTemplate>
+          </Thumb.Template>
+        </Thumb>
+      </Canvas>
+    </Border>
+  </DockPanel>
+</Window>

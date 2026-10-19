@@ -81,33 +81,83 @@ public sealed class ImageOperationTests : IDisposable
     }
 
     [Theory]
-    [InlineData(true, 50, 400, 200, 200, 100)]
-    [InlineData(true, 25, 400, 200, 100, 50)]
-    [InlineData(false, 100, 400, 200, 100, 50)]
-    [InlineData(false, 100, 150, 300, 50, 100)]
-    public async Task Resize_produces_the_expected_dimensions(bool percent, int value, int width, int height, int expectedWidth, int expectedHeight)
+    [InlineData(0.5, 0.5, 400, 200, 200, 100)]
+    [InlineData(0.25, 0.25, 400, 200, 100, 50)]
+    [InlineData(1.5, 1.5, 40, 20, 60, 30)]
+    [InlineData(0.5, 1.0, 400, 200, 200, 200)]
+    public async Task Resize_applies_the_chosen_scale(double scaleX, double scaleY, int width, int height, int expectedWidth, int expectedHeight)
     {
-        var mode = percent ? ResizeMode.Percent : ResizeMode.LongEdge;
-        var source = _fixtures.Image($"resize-{mode}-{value}-{width}.png", SKEncodedImageFormat.Png, width, height);
+        var source = _fixtures.Image($"resize-{scaleX}-{scaleY}-{width}.png", SKEncodedImageFormat.Png, width, height);
 
-        var result = await Fixtures.Run(new ImageResizeOperation(mode, value), [source]);
+        var result = await Fixtures.Run(new ImageResizeOperation(), [source], new OperationOptions(ScaleX: scaleX, ScaleY: scaleY));
 
-        using var bitmap = Load(result.Outputs.Single());
+        string output = result.Outputs.Single();
+        using var bitmap = Load(output);
         Assert.Equal((expectedWidth, expectedHeight), (bitmap.Width, bitmap.Height));
+        Assert.EndsWith($"({expectedWidth}×{expectedHeight}).png", output);
         AssertClose(SKColors.Red, bitmap.GetPixel(expectedWidth / 4, expectedHeight / 2));
     }
 
     [Fact]
-    public async Task Resize_to_a_larger_edge_is_skipped_with_a_note()
+    public async Task Batch_resize_keeps_each_image_proportional()
     {
-        var source = _fixtures.Image("small.png", SKEncodedImageFormat.Png, 64, 32);
+        var wide = _fixtures.Image("wide.png", SKEncodedImageFormat.Png, 400, 200);
+        var tall = _fixtures.Image("tall.png", SKEncodedImageFormat.Png, 100, 300);
 
-        var result = await Fixtures.Run(new ImageResizeOperation(ResizeMode.LongEdge, 1920), [source]);
+        var result = await Fixtures.Run(new ImageResizeOperation(), [wide, tall], new OperationOptions(ScaleX: 0.5, ScaleY: 0.5));
+
+        Assert.Equal(2, result.SucceededCount);
+        using var first = Load(result.Outcomes[0].Outputs.Single());
+        using var second = Load(result.Outcomes[1].Outputs.Single());
+        Assert.Equal((200, 100), (first.Width, first.Height));
+        Assert.Equal((50, 150), (second.Width, second.Height));
+    }
+
+    [Fact]
+    public async Task Resize_to_the_same_size_saves_nothing()
+    {
+        var source = _fixtures.Image("same-size.png", SKEncodedImageFormat.Png, 64, 32);
+
+        var result = await Fixtures.Run(new ImageResizeOperation(), [source], new OperationOptions(ScaleX: 1, ScaleY: 1));
 
         var outcome = Assert.Single(result.Outcomes);
         Assert.True(outcome.Succeeded);
         Assert.Empty(outcome.Outputs);
-        Assert.Contains("already", outcome.Message);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(5)]
+    public async Task Resize_rejects_invalid_scales(double scale)
+    {
+        var source = _fixtures.Image($"bad-scale-{scale}.png", SKEncodedImageFormat.Png);
+
+        var result = await Fixtures.Run(new ImageResizeOperation(), [source], new OperationOptions(ScaleX: scale, ScaleY: scale));
+
+        Assert.Equal(OperationErrorKind.InvalidInput, result.FirstFailure!.Error);
+    }
+
+    [Fact]
+    public void Preview_reports_full_size_and_is_downscaled()
+    {
+        var source = _fixtures.Image("preview.png", SKEncodedImageFormat.Png, 1600, 800);
+
+        var preview = ImagePreview.Load(source, 400);
+
+        Assert.Equal((1600, 800), (preview.Width, preview.Height));
+        using var bitmap = SKBitmap.Decode(preview.Png);
+        Assert.Equal((400, 200), (bitmap.Width, bitmap.Height));
+    }
+
+    [Fact]
+    public void Preview_follows_exif_orientation()
+    {
+        var source = _fixtures.SidewaysJpeg("preview-sideways.jpg", 40, 20);
+
+        var preview = ImagePreview.Load(source, 400);
+
+        Assert.Equal((20, 40), (preview.Width, preview.Height));
     }
 
     [Theory]

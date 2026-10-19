@@ -12,6 +12,7 @@ using Kumo.Core.Files;
 using Kumo.Core.Operations;
 using Kumo.Core.Radial;
 using Kumo.Core.Settings;
+using Kumo.Operations;
 using Kumo.Windows.Input;
 using Kumo.Windows.Interop;
 using Kumo.Windows.Shell;
@@ -485,7 +486,7 @@ internal sealed class OverlayController : IDisposable
             return;
         var window = _window;
         var files = _files;
-        var options = AskForInput(entry, files.Count);
+        var options = await AskForInput(entry, files);
         if (options == null)
         {
             EnterClickMode();
@@ -538,10 +539,31 @@ internal sealed class OverlayController : IDisposable
         ReleaseMemoryWhenIdle();
     }
 
-    private OperationOptions? AskForInput(MenuEntry entry, int fileCount)
+    private async Task<OperationOptions?> AskForInput(MenuEntry entry, IReadOnlyList<InputFile> files)
     {
         if (entry.Requirement == InputRequirement.None || _window == null)
             return OperationOptions.None;
+        int fileCount = files.Count;
+
+        ImagePreview? preview = null;
+        if (entry.Requirement == InputRequirement.Dimensions)
+        {
+            _window.SetStatus("Opening the image…");
+            try
+            {
+                preview = await Task.Run(() => ImagePreview.Load(files[0], maxEdge: 1600));
+            }
+            catch (Exception ex) when (ex is OperationFailedException or IOException or UnauthorizedAccessException)
+            {
+                var (_, message) = OperationErrors.Classify(ex);
+                _window.Menu.Hub.MascotState = MascotState.Error;
+                _window.SetStatus(message, new StatusAction("Close", () => Hide("closed")));
+                return null;
+            }
+            if (_window == null || _phase != Phase.Menu)
+                return null;
+            _window.SetStatus("Choose the new size");
+        }
 
         var theme = Theme.WindowThemeMode(_app.Settings.Theme);
         _app.SetPointerTracking(false);
@@ -551,6 +573,7 @@ internal sealed class OverlayController : IDisposable
             {
                 InputRequirement.PageRange => InputDialog.AskPageRange(_window, theme, fileCount) is { } range ? new OperationOptions(PageRange: range) : null,
                 InputRequirement.Password => InputDialog.AskPassword(_window, theme, Kumo.Operations.KumoOperations.MinimumPasswordLength) is { } password ? new OperationOptions(Password: password) : null,
+                InputRequirement.Dimensions => ResizeWindow.Ask(_window, theme, preview!, files[0].Name, fileCount) is { } scale ? new OperationOptions(ScaleX: scale.ScaleX, ScaleY: scale.ScaleY) : null,
                 _ => OperationOptions.None,
             };
         }

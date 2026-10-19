@@ -56,7 +56,7 @@ setting (reduced motion), light and dark mode, and per-monitor display scaling.
 | Files | Action | Result |
 | --- | --- | --- |
 | PNG, JPG, WEBP, BMP, GIF (first frame) | **Convert** to PNG, JPG, WEBP, BMP or PDF | New file in the chosen format. Transparency is placed on white for JPG and BMP. Camera orientation is applied. |
-| Images | **Resize** to 75 %, 50 %, 25 %, or to fit within 1920 or 1280 pixels | Same format (GIF results are saved as PNG). Images already small enough are left alone. |
+| Images | **Resize** by hand | A preview window opens: drag the corner handle or type width and height (proportions locked by default, up to 4× larger). A batch is scaled by the same proportion. Same format; GIF results are saved as PNG. |
 | JPG, WEBP | **Compress**: High quality, Balanced or Smallest | Re-encoded copy. If it would not be smaller, nothing is saved. |
 | PNG | **Compress** (lossless optimisation) | Maximum PNG compression without changing pixels. |
 | Images | **Rotate** 90° right, 90° left or 180° | Rotated copy. JPG files are re-encoded at quality 92. |
