@@ -155,6 +155,16 @@ internal sealed class KumoApplication : Application
         timer.Start();
     }
 
+    /// <summary>
+    /// Quits for the installer. Running file work is cancelled by the normal shutdown path, which removes partial
+    /// results; the installer only asks after Kumo itself launched it or the user started a new installation.
+    /// </summary>
+    private void ExitForInstaller()
+    {
+        _log.Info("Exit requested by another process", ("busy", _menu?.HasRunningJobs == true));
+        Shutdown();
+    }
+
     private UpdateSummary DescribeUpdates()
     {
         var environment = _updates!.Environment;
@@ -276,6 +286,11 @@ internal sealed class KumoApplication : Application
 
     private void HandleArguments(string[] arguments, bool fromAnotherLaunch)
     {
+        if (arguments.Contains(CommandLine.Exit))
+        {
+            ExitForInstaller();
+            return;
+        }
         if (arguments.Contains(CommandLine.Settings))
         {
             ShowSettings();
