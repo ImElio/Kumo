@@ -11,4 +11,6 @@ public partial class AboutWindow : Window
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         VersionText.Text = version is null ? string.Empty : $"Version {version.Major}.{version.Minor}.{version.Build}";
     }
+
+    private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
 }

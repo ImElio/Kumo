@@ -23,6 +23,8 @@ internal static class CommandLine
 {
     public const string Background = "--background";
     public const string Show = "--show";
+    public const string Settings = "--settings";
+    public const string About = "--about";
 
     public static string[] Files(IEnumerable<string> arguments) =>
         arguments.Where(a => !a.StartsWith("--", StringComparison.Ordinal) && System.IO.File.Exists(a)).ToArray();

@@ -48,6 +48,10 @@ public partial class SettingsWindow : Window
         OutputPath.Text = _settings.OutputDirectory;
         PreserveOriginals.IsChecked = _settings.PreserveOriginals;
         DiagnosticLogging.IsChecked = _settings.DiagnosticLogging;
+
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        SidebarVersion.Text = version is null ? string.Empty : $"Version {version.Major}.{version.Minor}.{version.Build}";
+        Navigation.SelectedIndex = 0;
     }
 
     internal SettingsResult? Result { get; private set; }
@@ -142,6 +146,19 @@ public partial class SettingsWindow : Window
         _settings.DiagnosticLogging = DiagnosticLogging.IsChecked == true;
 
         Result = new SettingsResult(_settings.Normalize(), StartWithWindows.IsChecked == true);
-        DialogResult = true;
+        Close();
+    }
+
+    private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
+
+    private void OnMinimize(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void OnNavigate(object sender, SelectionChangedEventArgs e)
+    {
+        string page = (Navigation.SelectedItem as ListBoxItem)?.Tag as string ?? "General";
+        GeneralPage.Visibility = page == "General" ? Visibility.Visible : Visibility.Collapsed;
+        InteractionPage.Visibility = page == "Interaction" ? Visibility.Visible : Visibility.Collapsed;
+        FilesPage.Visibility = page == "Files" ? Visibility.Visible : Visibility.Collapsed;
+        AdvancedPage.Visibility = page == "Advanced" ? Visibility.Visible : Visibility.Collapsed;
     }
 }

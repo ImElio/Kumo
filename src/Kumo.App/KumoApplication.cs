@@ -190,6 +190,16 @@ internal sealed class KumoApplication : Application
 
     private void HandleArguments(string[] arguments, bool fromAnotherLaunch)
     {
+        if (arguments.Contains(CommandLine.Settings))
+        {
+            ShowSettings();
+            return;
+        }
+        if (arguments.Contains(CommandLine.About))
+        {
+            ShowAbout();
+            return;
+        }
         var files = CommandLine.Files(arguments);
         if (files.Length > 0)
         {
