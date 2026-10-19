@@ -77,8 +77,7 @@ internal sealed class UpdateCoordinator : IDisposable
 
         var signature = Authenticode.Verify(path);
         string? productVersion = FileVersionInfo.GetVersionInfo(path).ProductVersion;
-        bool versionMatches = productVersion != null && SemVersion.TryParse(productVersion, out var fileVersion) && fileVersion.Equals(release.Version);
-        if (!signature.IsSignedBy(Environment.ExpectedPublisher) || !versionMatches)
+        if (!InstallerPolicy.Accept(signature.IsTrusted, signature.Subject, Environment.ExpectedPublisher, productVersion, release.Version))
         {
             _log.Warning("Downloaded installer rejected", ("trusted", signature.IsTrusted), ("status", signature.Status),
                 ("subject", signature.Subject), ("productVersion", productVersion));

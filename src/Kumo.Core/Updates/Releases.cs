@@ -106,3 +106,17 @@ public static class ReleaseSelector
             .OrderByDescending(r => r.Version)
             .FirstOrDefault();
 }
+
+public static class InstallerPolicy
+{
+    /// <summary>
+    /// A downloaded installer may run only if Windows trusts its signature, the signer is exactly the publisher this
+    /// build expects, and the file declares the version that was offered. Any missing fact means "no".
+    /// </summary>
+    public static bool Accept(bool signatureTrusted, string? signerSubject, string expectedPublisher, string? productVersion, SemVersion offered) =>
+        signatureTrusted
+        && expectedPublisher.Length > 0
+        && string.Equals(signerSubject, expectedPublisher, StringComparison.Ordinal)
+        && SemVersion.TryParse(productVersion, out var fileVersion)
+        && fileVersion.Equals(offered);
+}
