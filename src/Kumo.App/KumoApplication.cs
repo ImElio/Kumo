@@ -106,6 +106,7 @@ internal sealed class KumoApplication : Application
         }
 
         HandleArguments(_startupArguments, fromAnotherLaunch: false);
+        Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => _menu.Prewarm());
     }
 
     protected override void OnExit(ExitEventArgs e)

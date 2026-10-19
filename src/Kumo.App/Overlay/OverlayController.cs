@@ -115,13 +115,15 @@ internal sealed class OverlayController : IDisposable
 
     public void OpenForFiles(IReadOnlyList<string> paths, ScreenPoint point, bool fromKeyboard)
     {
+        long started = Stopwatch.GetTimestamp();
         var window = Prepare(point);
         _phase = Phase.Menu;
         window.SetStatus("Reading files…");
         window.ShowAt(point);
         EnterClickMode();
         BeginLoading(paths, focusFirst: fromKeyboard);
-        _app.Log.Info("Menu opened", ("files", paths.Count), ("source", fromKeyboard ? "keyboard" : "pointer"));
+        _app.Log.Info("Menu opened", ("files", paths.Count), ("source", fromKeyboard ? "keyboard" : "pointer"),
+            ("ms", Stopwatch.GetElapsedTime(started).TotalMilliseconds));
     }
 
     public async void OpenForSelection()
@@ -141,6 +143,23 @@ internal sealed class OverlayController : IDisposable
         {
             _app.Log.Error("Reading the Explorer selection failed", ex);
         }
+    }
+
+    /// <summary>
+    /// Builds the overlay once, off screen, after start-up. Creating the first WPF window costs several hundred
+    /// milliseconds; paying it in advance keeps the first gesture as quick as later ones.
+    /// </summary>
+    public void Prewarm()
+    {
+        if (_window != null)
+            return;
+        var window = Prepare(OverlayWindowInterop.GetCursorPosition());
+        window.Menu.ShowItems([new RadialItem("Kumo", "Kumo", RadialItemKind.Action, OperationCategory.Convert, null)], showIcons: true, animate: false);
+        window.SetStatus("Kumo");
+        window.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        window.Arrange(new Rect(window.DesiredSize));
+        window.UpdateLayout();
+        window.Menu.ClearItems();
     }
 
     public void Dispose()
@@ -220,12 +239,13 @@ internal sealed class OverlayController : IDisposable
 
     private void OpenForDrag(ScreenPoint point)
     {
+        long started = Stopwatch.GetTimestamp();
         var window = Prepare(point);
         _phase = Phase.AwaitingFiles;
         window.SetStatus("Reading files…");
         window.ShowAt(point);
         _app.SetPointerTracking(false);
-        _app.Log.Info("Overlay activated", ("x", point.X), ("y", point.Y));
+        _app.Log.Info("Overlay activated", ("x", point.X), ("y", point.Y), ("ms", Stopwatch.GetElapsedTime(started).TotalMilliseconds));
     }
 
     private void OnDragEnter(object sender, DragEventArgs e)
