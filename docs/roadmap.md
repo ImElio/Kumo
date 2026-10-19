@@ -8,9 +8,7 @@
    logging now records drag entry and rejected drops.
 3. **Packaging.** Recommended order:
    - A portable ZIP (framework-dependent, about 38 MB) for early testers.
-   - A per-user installer (no elevation) that installs to `%LOCALAPPDATA%\Programs\Kumo`, checks for the .NET 10
-     Desktop Runtime and adds a Start menu entry. Inno Setup or WiX both fit; the autostart `Run` value is already
-     managed by Kumo itself.
+   - The per-user NSIS installer is built; it needs code signing (next item) before Kumo can update through it.
    - MSIX later. It would need the `windows.startupTask` extension instead of the `Run` key and a Store-signed
      identity; low-level hooks and drag-and-drop work in full-trust MSIX apps.
    - Self-contained publishing removes the runtime prerequisite at roughly +70 MB.

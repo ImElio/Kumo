@@ -49,6 +49,12 @@ actually executed. Last updated 2026-10-19 on Windows 11 Pro 10.0.26200, one mon
 | Rate limit message and back-off | Exhaust the unauthenticated limit | Pending (unit-tested) |
 | Offline check shows the connection message | Disconnect, Check for updates | Pending (unit-tested) |
 | Tray notification once per version, Later snoozes | Automatic check with an available update | Pending (unit-tested) |
-| Signed installer download, verification and handoff | Requires a signed installer release and `KUMO_UPDATE_PUBLISHER` | Blocked: no installer or signing yet |
+| Installer: refuses a folder not named Kumo, fresh install, marker, uninstall entry, shortcut | Silent installs into a test folder | Automated run passed (2026-10-19) |
+| Installer: Kumo detects the installer installation | Same run; Kumo's log shows `"installation":"Installer"` | Automated run passed |
+| Installer: upgrade over a running Kumo, busy executable left intact, uninstall keeps settings | Same run | Automated run passed |
+| Arm64 installer refuses x64 PCs | Silent run on x64 | Automated run passed |
+| Interactive installer pages, Finish → Start Kumo, Installed apps entry | Run the installer by hand | Pending (first page checked from a screenshot) |
+| Installer on Windows on Arm | Arm64 PC | Pending |
+| Signed installer download, verification and handoff | Requires a signed installer release and `KUMO_UPDATE_PUBLISHER` | Blocked: no signing yet |
 | Store-installed copy shows "Updates managed by Microsoft Store" | Install from the Store | Blocked: not in the Store yet |
 | Release workflow end to end | Push a tag in a test fork with the `release` environment configured | Pending |

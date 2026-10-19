@@ -88,7 +88,7 @@ Not supported yet: DOCX, audio, video, TIFF, HEIC, resizing by scale, and PDF te
 
 Kumo can tell you when a new version is published on GitHub (Settings → Updates: Stable or Beta channel, automatic
 checks on or off, "Check for updates"). Today it announces the update and opens the release page; installing updates
-by itself is built and tested but stays off until releases are code-signed. Store copies are updated by the Microsoft
+through the NSIS installer is built and tested but stays off until releases are code-signed. Store copies are updated by the Microsoft
 Store. Local builds never check. Details: [versioning](docs/versioning.md), [releases](docs/releases.md),
 [updater](docs/updater.md), [distribution](docs/distribution.md).
 
@@ -116,6 +116,13 @@ Release output (framework-dependent, about 38 MB):
 
 ```powershell
 dotnet publish src/Kumo.App -c Release -r win-x64 --self-contained false -o artifacts/publish
+```
+
+Release packages (portable ZIPs, NSIS installers and `SHA256SUMS.txt` for x64 and Arm64; the installers need
+[NSIS 3](https://nsis.sourceforge.io)):
+
+```powershell
+./tools/package-release.ps1
 ```
 
 `tools/Kumo.AssetGen` turns the mascot artwork in `assets/mascot/kumo-<state>.svg` into the images embedded in the app, the state sheet and `kumo.ico`.
@@ -152,7 +159,7 @@ Measured on the Release build (details and method in [docs/performance.md](docs/
 - Drags from the desktop, the shortcut on a desktop selection, multiple monitors with mixed scaling, pen/touch
   drags, Remote Desktop and Explorer restarts have not yet been validated by hand. See [docs/manual-validation.md](docs/manual-validation.md).
 - English only.
-- No installer yet; see the packaging notes in [docs/roadmap.md](docs/roadmap.md).
+- The per-user NSIS installer is not code-signed yet, so Windows SmartScreen warns about an unknown publisher.
 
 ## License
 

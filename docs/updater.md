@@ -62,8 +62,9 @@ announced immediately. Notifications respect Settings → Notifications.
 
 ## Current limitations
 
-- **No installer and no signing exist yet**, so `InstallVerified` is never active in real builds. Every installation
-  today is portable (or Store, once packaged), and updates are announced with a link to the release page.
+- **The NSIS installer exists but is not signed yet**, so `InstallVerified` is never active in real builds: installer
+  and portable copies announce updates and open the release page. Signing plus `KUMO_UPDATE_PUBLISHER` turns on
+  verified self-updates without code changes.
 - Revocation checking needs network access; offline machines cannot verify an installer and will not install.
 - Release notes are shown as plain text.
 - Only the first three pages (300) of releases are read.

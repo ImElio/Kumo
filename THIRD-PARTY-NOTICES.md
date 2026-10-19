@@ -15,6 +15,9 @@ license. Versions are those referenced by the projects at the time of writing.
 PDFsharp 6.5.0 and later are distributed under the AGPL-3.0. Kumo deliberately stays on 6.2.4; upgrading requires a
 licensing decision.
 
+The installers are built with [NSIS](https://nsis.sourceforge.io) (zlib/libpng license); the installer stub it
+embeds carries no attribution requirement.
+
 The .NET runtime and WPF are provided by Microsoft under the MIT License and are not redistributed by
 framework-dependent builds.
 

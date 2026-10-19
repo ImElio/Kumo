@@ -19,20 +19,28 @@ Upgrading a portable copy:
 4. Start Kumo. Settings and logs live in `%LOCALAPPDATA%\Kumo` and are kept. If "Start with Windows" was on and the
    folder moved, turn it off and on again so the startup entry points to the new location.
 
-### Installer (not built yet)
+### Installer (NSIS)
 
-The updater already understands an installer-based installation; what is missing is the installer itself and code
-signing. Requirements for it:
+`packaging/installer/Kumo.nsi`, built by `tools/package-release.ps1` with NSIS 3 (`makensis`) into
+`Kumo-<version>-win-x64-setup.exe` and `Kumo-<version>-win-arm64-setup.exe`.
 
-- Per-user install to `%LOCALAPPDATA%\Programs\Kumo`, no elevation.
-- Writes `Kumo.installation.json` containing `{"kind":"installer"}` next to `Kumo.exe`; the uninstaller removes it.
-- Closes or waits for a running Kumo, replaces files atomically or rolls back on failure, then starts Kumo again.
-- Product version resource equal to the release version (Kumo checks it before running the installer).
-- Authenticode-signed with the certificate whose subject is configured as `KUMO_UPDATE_PUBLISHER`.
-- Asset name `Kumo-<version>-<rid>-setup.exe`, listed in `SHA256SUMS.txt`.
+| Behaviour | Detail |
+| --- | --- |
+| Scope | Per user, no administrator rights (`RequestExecutionLevel user`), default `%LOCALAPPDATA%\Programs\Kumo`. |
+| Folder guard | The install folder must be named `Kumo` and be new, empty or already contain Kumo. It is checked on the directory page, in `.onInit` and at install time (silent installs skip the page), so the uninstaller can never delete an unrelated folder. |
+| Architecture | The Arm64 installer refuses non-Arm PCs; the x64 installer runs on x64 and on Arm (emulated). |
+| Runtime | Looks for the .NET 10 Desktop Runtime and offers its download page if missing; installation continues either way. |
+| Running Kumo | Runs `Kumo.exe --exit`, waits up to 10 s for the executable to be released, then asks; silent installs give up (exit code 2) without changing anything. |
+| Upgrade safety | The existing folder is renamed to `Kumo.previous` before the new files are copied and restored if copying fails or is cancelled (`.onInstFailed`); it is removed only after success. |
+| Updater marker | Writes `Kumo.installation.json` (`{"kind":"installer","version":"…"}`), which tells Kumo it may update itself through the installer. |
+| Version resource | `ProductVersion` is the SemVer version, which Kumo checks before running a downloaded installer. |
+| Registration | Start menu shortcut and an "Installed apps" entry under `HKCU\…\Uninstall\Kumo` (version, size, quiet uninstall string). |
+| Uninstall | Exits Kumo, removes the startup entry, shortcut, registry entry and the install folder. Settings and logs in `%LOCALAPPDATA%\Kumo` are kept. |
+| Silent use | `Kumo-<version>-win-x64-setup.exe /S [/D=<folder>\Kumo]` and `Uninstall.exe /S`. |
+| Signing | `-SignCommand` in `package-release.ps1` (NSIS `!finalize` / `!uninstfinalize`) signs both the installer and the embedded uninstaller once a certificate exists. |
 
-Inno Setup and WiX both meet these requirements; neither is installed on the current development machine, so no
-installer project is checked in yet.
+Unsigned installers trigger SmartScreen's "unknown publisher" warning, and Kumo will not run them by itself; until
+signing exists users download and run them by hand.
 
 ## Microsoft Store (MSIX)
 
