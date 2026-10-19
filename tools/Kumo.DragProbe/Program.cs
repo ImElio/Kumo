@@ -130,18 +130,30 @@ internal static partial class Program
             Input.LeftUp();
             return (false, "overlay window not found after Shift tap");
         }
+        // The window is (D + 28) × (D + 140) DIPs for a ring of diameter D, so the scale follows from the size
+        // difference; the first segment sits at the top, roughly 0.35·D above the centre.
         var r = overlay.Current.BoundingRectangle;
-        double scale = r.Width / 340;
-        var target = new System.Windows.Point(r.Left + r.Width / 2, r.Top + r.Height / 2 - 111 * scale);
+        double scale = (r.Height - r.Width) / 112;
+        double diameter = r.Width / scale - 28;
+        var target = new System.Windows.Point(r.Left + r.Width / 2, r.Top + r.Height / 2 - 0.35 * diameter * scale);
+        string expected = Path.ChangeExtension(sample, ".jpg");
+        File.Delete(expected);
+
         Input.MoveSmoothly(drag, target, 12);
-        Thread.Sleep(300);
+        Thread.Sleep(800);
+        Input.MoveSmoothly(target, new System.Windows.Point(target.X + 3, target.Y + 2), 3);
+        Thread.Sleep(250);
         Input.LeftUp();
-        Thread.Sleep(900);
+        Thread.Sleep(1500);
         var lines = LogSince(mark);
         bool activated = lines.Any(l => l.Contains("\"Overlay activated\""));
-        bool dropped = lines.Any(l => l.Contains("\"Drop accepted\"") && l.Contains("\"action\":\"Convert\""));
+        bool dropped = lines.Any(l => l.Contains("\"Drop accepted\""));
+        bool converted = lines.Any(l => l.Contains("\"Operation finished\"") && l.Contains("\"entry\":\"Convert to JPG\"") && l.Contains("\"succeeded\":1"));
+        bool output = File.Exists(expected);
         bool intact = File.Exists(sample);
-        return (activated && dropped && intact, $"activated={activated} dropAccepted(Convert)={dropped} sourceIntact={intact}");
+        File.Delete(expected);
+        return (activated && dropped && converted && output && intact,
+            $"activated={activated} dropAccepted={dropped} convertedToJpg={converted} outputWritten={output} sourceIntact={intact}");
     }
 
     private static (bool, string) CancelWithEscape(System.Windows.Point item, string sample)
