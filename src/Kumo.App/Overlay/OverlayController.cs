@@ -155,6 +155,7 @@ internal sealed class OverlayController : IDisposable
         if (_window != null)
             return;
         var window = Prepare(OverlayWindowInterop.GetCursorPosition());
+        _ = window.Handle;
         window.Menu.ShowItems([new RadialItem("Kumo", "Kumo", RadialItemKind.Action, OperationCategory.Convert, null)], showIcons: true, animate: false);
         window.SetStatus("Kumo");
         window.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
