@@ -59,7 +59,7 @@ only while a shell drag is in progress. Details and the rationale are in [intera
 | `RadialSegment`, `RadialHub` | Template-less `Button`s that draw themselves and hit-test only their own shape, so they keep keyboard focus and UI Automation support without a visual tree per segment. |
 | `RadialLayout` | Geometry in DIPs derived from the ring diameter. |
 | `HoverDwell` | Spring-loaded hover: resting on a category opens it, resting on the hub goes back. |
-| `KumoMascot`, `MascotArt` | The mascot as frozen vector drawings per state; the same data generates the SVG and ICO assets. |
+| `KumoMascot`, `MascotImages` | The mascot: one 256 px image per state, generated from `assets/mascot` and embedded as resources. |
 
 `RadialMenuModel` (in Core) decides what the ring shows. Categories with a single entry are promoted to direct
 actions, so for example "Merge PDFs" needs one step.

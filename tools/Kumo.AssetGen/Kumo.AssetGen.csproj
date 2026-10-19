@@ -6,8 +6,4 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="..\..\src\Kumo.App\Mascot\MascotArt.cs" Link="MascotArt.cs" />
-  </ItemGroup>
-
 </Project>

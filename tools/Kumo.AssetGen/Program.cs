@@ -1,117 +1,147 @@
 using System.Globalization;
 using System.IO;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Kumo.App.Mascot;
 
 namespace Kumo.AssetGen;
 
-/// <summary>Regenerates the mascot SVGs, the state sheet and the application icon from <see cref="MascotArt"/>.</summary>
-internal static class Program
+/// <summary>
+/// Turns the mascot artwork in assets/mascot/kumo-&lt;state&gt;.svg (raster images wrapped in SVG) into the images the
+/// app embeds, the application icon and a preview sheet of all states.
+/// </summary>
+internal static partial class Program
 {
+    private static readonly string[] States = ["idle", "dragging", "hovering", "converting", "compressing", "processing", "success", "error", "cancelled"];
     private static readonly int[] IconSizes = [16, 20, 24, 32, 40, 48, 64, 256];
+    private const int AppImageSize = 256;
 
     [STAThread]
     private static int Main(string[] args)
     {
-        string assets = Path.GetFullPath(args.Length > 0 ? args[0] : "assets");
-        string mascot = Directory.CreateDirectory(Path.Combine(assets, "mascot")).FullName;
-        string icons = Directory.CreateDirectory(Path.Combine(assets, "icons")).FullName;
+        string root = Path.GetFullPath(args.Length > 0 ? args[0] : ".");
+        string mascot = Path.Combine(root, "assets", "mascot");
+        string icons = Path.Combine(root, "assets", "icons");
+        string appImages = Directory.CreateDirectory(Path.Combine(root, "src", "Kumo.App", "Mascot", "Images")).FullName;
 
-        foreach (var state in Enum.GetValues<MascotState>())
-            File.WriteAllText(Path.Combine(mascot, $"kumo-{state.ToString().ToLowerInvariant()}.svg"), Svg(state), new UTF8Encoding(false));
+        var trimmed = new Dictionary<string, BitmapSource>();
+        foreach (string state in States)
+        {
+            var source = LoadEmbeddedPng(Path.Combine(mascot, $"kumo-{state}.svg"));
+            trimmed[state] = TrimToSquare(source);
+            File.WriteAllBytes(Path.Combine(appImages, $"{state}.png"), Png(Scale(trimmed[state], AppImageSize)));
+        }
 
-        File.WriteAllBytes(Path.Combine(icons, "kumo.ico"), Icon(MascotState.Idle));
-        File.WriteAllBytes(Path.Combine(icons, "kumo-256.png"), Png(MascotState.Idle, 256));
-        File.WriteAllBytes(Path.Combine(mascot, "states.png"), StateSheet());
-        Console.WriteLine($"Assets written to {assets}");
+        File.WriteAllBytes(Path.Combine(icons, "kumo.ico"), Icon(trimmed["idle"]));
+        File.WriteAllBytes(Path.Combine(icons, "kumo-256.png"), Png(Scale(trimmed["idle"], 256)));
+        File.WriteAllBytes(Path.Combine(mascot, "states.png"), StateSheet(trimmed));
+        Console.WriteLine($"Assets written under {root}");
         return 0;
     }
 
-    private static string Svg(MascotState state)
+    [GeneratedRegex("href=\"data:image/png;base64,([^\"]+)\"")]
+    private static partial Regex EmbeddedPng();
+
+    private static BitmapSource LoadEmbeddedPng(string svgPath)
     {
-        var svg = new StringBuilder();
-        svg.Append("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" width=\"100\" height=\"100\">\n");
-        svg.Append(CultureInfo.InvariantCulture, $"  <title>Kumo — {state}</title>\n");
-        foreach (var part in MascotArt.Parts(state))
-        {
-            svg.Append(CultureInfo.InvariantCulture, $"  <path d=\"{part.Data}\" fill=\"{Css(part.Fill)}\"");
-            if (part.Stroke is { } stroke)
-                svg.Append(CultureInfo.InvariantCulture, $" stroke=\"{Css(stroke)}\" stroke-width=\"{part.StrokeWidth}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"");
-            svg.Append("/>\n");
-        }
-        svg.Append("</svg>\n");
-        return svg.ToString();
+        var match = EmbeddedPng().Match(File.ReadAllText(svgPath));
+        if (!match.Success)
+            throw new InvalidDataException($"{svgPath} does not contain an embedded PNG image.");
+        using var stream = new MemoryStream(Convert.FromBase64String(match.Groups[1].Value));
+        var frame = BitmapFrame.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+        return new FormatConvertedBitmap(frame, PixelFormats.Pbgra32, null, 0);
     }
 
-    private static string Css(Color? color)
+    /// <summary>Crops the transparent margin around the drawing and centres it on a square canvas.</summary>
+    private static BitmapSource TrimToSquare(BitmapSource image)
     {
-        if (color is not { } c)
-            return "none";
-        return c.A == 255
-            ? $"#{c.R:X2}{c.G:X2}{c.B:X2}"
-            : string.Create(CultureInfo.InvariantCulture, $"rgba({c.R},{c.G},{c.B},{c.A / 255.0:0.###})");
-    }
-
-    private static byte[] Png(MascotState state, int size)
-    {
-        var visual = new DrawingVisual();
-        using (var context = visual.RenderOpen())
+        int width = image.PixelWidth, height = image.PixelHeight, stride = width * 4;
+        var pixels = new byte[stride * height];
+        image.CopyPixels(pixels, stride, 0);
+        int left = width, top = height, right = -1, bottom = -1;
+        for (int y = 0; y < height; y++)
         {
-            double scale = size / MascotArt.DesignSize;
-            context.PushTransform(new ScaleTransform(scale, scale));
-            context.DrawDrawing(MascotArt.Drawing(state));
-        }
-        return Encode(visual, size, size);
-    }
-
-    private static byte[] StateSheet()
-    {
-        var states = Enum.GetValues<MascotState>();
-        const int cell = 160;
-        var visual = new DrawingVisual();
-        using (var context = visual.RenderOpen())
-        {
-            context.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xF4, 0xF1, 0xEC)), null, new Rect(0, 0, cell * states.Length, cell + 28));
-            for (int i = 0; i < states.Length; i++)
+            for (int x = 0; x < width; x++)
             {
-                context.PushTransform(new TranslateTransform(i * cell + 10, 6));
-                context.PushTransform(new ScaleTransform(1.4, 1.4));
-                context.DrawDrawing(MascotArt.Drawing(states[i]));
-                context.Pop();
-                context.Pop();
-                var label = new FormattedText(states[i].ToString(), CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-                    new Typeface("Segoe UI"), 14, Brushes.Black, 1);
-                context.DrawText(label, new Point(i * cell + (cell - label.Width) / 2, cell));
+                if (pixels[y * stride + x * 4 + 3] < 16)
+                    continue;
+                left = Math.Min(left, x);
+                right = Math.Max(right, x);
+                top = Math.Min(top, y);
+                bottom = Math.Max(bottom, y);
             }
         }
-        return Encode(visual, cell * states.Length, cell + 28);
+        if (right < 0)
+            return image;
+
+        int side = Math.Max(right - left + 1, bottom - top + 1);
+        int padding = side / 40;
+        side += padding * 2;
+        var visual = new DrawingVisual();
+        using (var context = visual.RenderOpen())
+        {
+            var content = new CroppedBitmap(image, new Int32Rect(left, top, right - left + 1, bottom - top + 1));
+            double x = (side - content.PixelWidth) / 2.0, y = (side - content.PixelHeight) / 2.0;
+            context.DrawImage(content, new Rect(x, y, content.PixelWidth, content.PixelHeight));
+        }
+        var result = new RenderTargetBitmap(side, side, 96, 96, PixelFormats.Pbgra32);
+        result.Render(visual);
+        return result;
     }
 
-    private static byte[] Encode(Visual visual, int width, int height)
+    private static BitmapSource Scale(BitmapSource image, int size)
     {
-        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(visual);
+        var visual = new DrawingVisual();
+        RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.HighQuality);
+        using (var context = visual.RenderOpen())
+            context.DrawImage(image, new Rect(0, 0, size, size));
+        var result = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
+        result.Render(visual);
+        return result;
+    }
+
+    private static byte[] Png(BitmapSource image)
+    {
         var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        encoder.Frames.Add(BitmapFrame.Create(image));
         using var stream = new MemoryStream();
         encoder.Save(stream);
         return stream.ToArray();
     }
 
-    // ICO with PNG-compressed entries, supported by Windows Vista and later.
-    private static byte[] Icon(MascotState state)
+    private static byte[] StateSheet(Dictionary<string, BitmapSource> images)
     {
-        var images = IconSizes.Select(size => (size, data: Png(state, size))).ToList();
+        const int cell = 160;
+        var visual = new DrawingVisual();
+        RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.HighQuality);
+        using (var context = visual.RenderOpen())
+        {
+            context.DrawRectangle(new SolidColorBrush(Color.FromRgb(0xF4, 0xF1, 0xEC)), null, new Rect(0, 0, cell * States.Length, cell + 28));
+            for (int i = 0; i < States.Length; i++)
+            {
+                context.DrawImage(images[States[i]], new Rect(i * cell + 10, 6, cell - 20, cell - 20));
+                var label = new FormattedText(CultureInfo.InvariantCulture.TextInfo.ToTitleCase(States[i]), CultureInfo.InvariantCulture,
+                    FlowDirection.LeftToRight, new Typeface("Segoe UI"), 14, Brushes.Black, 1);
+                context.DrawText(label, new Point(i * cell + (cell - label.Width) / 2, cell));
+            }
+        }
+        var bitmap = new RenderTargetBitmap(cell * States.Length, cell + 28, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        return Png(bitmap);
+    }
+
+    // ICO with PNG-compressed entries, supported by Windows Vista and later.
+    private static byte[] Icon(BitmapSource image)
+    {
+        var entries = IconSizes.Select(size => (size, data: Png(Scale(image, size)))).ToList();
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream);
         writer.Write((ushort)0);
         writer.Write((ushort)1);
-        writer.Write((ushort)images.Count);
-        int offset = 6 + 16 * images.Count;
-        foreach (var (size, data) in images)
+        writer.Write((ushort)entries.Count);
+        int offset = 6 + 16 * entries.Count;
+        foreach (var (size, data) in entries)
         {
             writer.Write((byte)(size >= 256 ? 0 : size));
             writer.Write((byte)(size >= 256 ? 0 : size));
@@ -123,7 +153,7 @@ internal static class Program
             writer.Write(offset);
             offset += data.Length;
         }
-        foreach (var (_, data) in images)
+        foreach (var (_, data) in entries)
             writer.Write(data);
         writer.Flush();
         return stream.ToArray();

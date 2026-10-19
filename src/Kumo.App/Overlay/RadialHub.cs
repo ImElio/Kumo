@@ -39,6 +39,7 @@ internal sealed class RadialHub : Button
         _layout = layout;
         _palette = palette;
         AutomationProperties.SetName(this, "Close");
+        RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.HighQuality);
     }
 
     public MascotState MascotState
@@ -108,11 +109,7 @@ internal sealed class RadialHub : Button
 
         double mascotSize = radius * (ShowsBack ? 1.15 : 1.35);
         double mascotTop = center.Y - mascotSize / 2 - (ShowsBack ? radius * 0.16 : 0);
-        context.PushTransform(new TranslateTransform(center.X - mascotSize / 2, mascotTop));
-        context.PushTransform(new ScaleTransform(mascotSize / MascotArt.DesignSize, mascotSize / MascotArt.DesignSize));
-        context.DrawDrawing(MascotArt.Drawing(MascotState));
-        context.Pop();
-        context.Pop();
+        context.DrawImage(MascotImages.For(MascotState), new Rect(center.X - mascotSize / 2, mascotTop, mascotSize, mascotSize));
 
         if (ShowsBack)
         {

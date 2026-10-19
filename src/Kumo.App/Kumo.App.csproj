@@ -16,6 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="Mascot\Images\*.png" />
     <Content Include="..\..\assets\icons\kumo.ico" Link="kumo.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

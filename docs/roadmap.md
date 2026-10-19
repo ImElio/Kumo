@@ -15,8 +15,8 @@
      identity; low-level hooks and drag-and-drop work in full-trust MSIX apps.
    - Self-contained publishing removes the runtime prerequisite at roughly +70 MB.
 4. **Code signing** for the executable and installer, to avoid SmartScreen warnings.
-5. **Production mascot artwork** from an illustrator, keeping the nine expression states and the 100×100 design
-   grid used by `MascotArt`.
+5. **Mascot artwork as true vectors.** The current artwork is raster images wrapped in SVG; real vector files would
+   stay sharp at every size and shrink the assets.
 
 ## Features under consideration
 

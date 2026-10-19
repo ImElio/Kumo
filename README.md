@@ -109,7 +109,7 @@ Release output (framework-dependent, about 38 MB):
 dotnet publish src/Kumo.App -c Release -r win-x64 --self-contained false -o artifacts/publish
 ```
 
-`tools/Kumo.AssetGen` regenerates the mascot SVGs, the state sheet and `kumo.ico` from the artwork defined in code.
+`tools/Kumo.AssetGen` turns the mascot artwork in `assets/mascot/kumo-<state>.svg` into the images embedded in the app, the state sheet and `kumo.ico`.
 `tools/Kumo.DragProbe` drives real drags out of File Explorer to verify the integration end to end; it moves the
 pointer for a few seconds (see [docs/interaction.md](docs/interaction.md#verification)).
 
@@ -143,7 +143,6 @@ Measured on the Release build (details and method in [docs/performance.md](docs/
 - Drags from the desktop, the shortcut on a desktop selection, multiple monitors with mixed scaling, pen/touch
   drags, Remote Desktop and Explorer restarts have not yet been validated by hand. See [docs/manual-validation.md](docs/manual-validation.md).
 - English only.
-- The mascot is a clean vector placeholder; production artwork is still to be commissioned.
 - No installer yet; see the packaging notes in [docs/roadmap.md](docs/roadmap.md).
 
 ## License

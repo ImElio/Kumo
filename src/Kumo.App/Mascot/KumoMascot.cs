@@ -4,15 +4,18 @@ using System.Windows.Media;
 
 namespace Kumo.App.Mascot;
 
-/// <summary>Draws Kumo directly with a DrawingContext; changing state swaps a cached frozen drawing.</summary>
+/// <summary>Draws Kumo directly with a DrawingContext; changing state swaps a cached frozen image.</summary>
 public sealed class KumoMascot : FrameworkElement
 {
     public static readonly DependencyProperty StateProperty = DependencyProperty.Register(
         nameof(State), typeof(MascotState), typeof(KumoMascot),
         new FrameworkPropertyMetadata(MascotState.Idle, FrameworkPropertyMetadataOptions.AffectsRender, OnStateChanged));
 
+    private const double DefaultSize = 100;
+
     public KumoMascot()
     {
+        RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.HighQuality);
         IsHitTestVisible = false;
         Focusable = false;
         AutomationProperties.SetName(this, "Kumo");
@@ -27,8 +30,8 @@ public sealed class KumoMascot : FrameworkElement
     protected override Size MeasureOverride(Size availableSize)
     {
         double side = Math.Min(
-            double.IsInfinity(availableSize.Width) ? MascotArt.DesignSize : availableSize.Width,
-            double.IsInfinity(availableSize.Height) ? MascotArt.DesignSize : availableSize.Height);
+            double.IsInfinity(availableSize.Width) ? DefaultSize : availableSize.Width,
+            double.IsInfinity(availableSize.Height) ? DefaultSize : availableSize.Height);
         return new Size(side, side);
     }
 
@@ -37,12 +40,7 @@ public sealed class KumoMascot : FrameworkElement
         double side = Math.Min(ActualWidth, ActualHeight);
         if (side <= 0)
             return;
-        double scale = side / MascotArt.DesignSize;
-        context.PushTransform(new TranslateTransform((ActualWidth - side) / 2, (ActualHeight - side) / 2));
-        context.PushTransform(new ScaleTransform(scale, scale));
-        context.DrawDrawing(MascotArt.Drawing(State));
-        context.Pop();
-        context.Pop();
+        context.DrawImage(MascotImages.For(State), new Rect((ActualWidth - side) / 2, (ActualHeight - side) / 2, side, side));
     }
 
     private static void OnStateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
