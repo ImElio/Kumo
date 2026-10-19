@@ -29,4 +29,16 @@ public class PageRangeTests
         Assert.False(PageRange.TryParse(text, pageCount, out _, out string error));
         Assert.NotEmpty(error);
     }
+
+    [Theory]
+    [InlineData("1-3, 5", true)]
+    [InlineData("8-", true)]
+    [InlineData("250", true)]
+    [InlineData("3-1", false)]
+    [InlineData("x", false)]
+    [InlineData("", false)]
+    public void Syntax_can_be_checked_without_a_page_count(string text, bool expected)
+    {
+        Assert.Equal(expected, PageRange.IsWellFormed(text, out _));
+    }
 }

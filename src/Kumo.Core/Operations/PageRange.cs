@@ -57,6 +57,33 @@ public static class PageRange
         return true;
     }
 
+    /// <summary>Checks the syntax only, before the document's page count is known.</summary>
+    public static bool IsWellFormed(string? text, out string error) => TryParseBounded(text, int.MaxValue, out error);
+
+    private static bool TryParseBounded(string? text, int pageCount, out string error)
+    {
+        error = string.Empty;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            error = "Enter the pages to extract, for example 1-3, 5.";
+            return false;
+        }
+        foreach (string raw in text.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int dash = raw.IndexOf('-');
+            string start = dash < 0 ? raw : raw[..dash].Trim();
+            string end = dash < 0 ? raw : raw[(dash + 1)..].Trim();
+            if (!TryPage(start.Length == 0 ? "1" : start, out int first))
+                return Fail($"\"{raw}\" is not a page number.", out error);
+            int last = pageCount;
+            if (end.Length > 0 && !TryPage(end, out last))
+                return Fail($"\"{raw}\" is not a valid range.", out error);
+            if (first > last)
+                return Fail($"\"{raw}\" runs backwards.", out error);
+        }
+        return true;
+    }
+
     private static bool TryPage(string text, out int page) =>
         int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out page) && page >= 1;
 
