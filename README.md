@@ -6,7 +6,8 @@ Kumo is a small Windows utility for everyday file chores. It waits quietly in th
 drag files out of File Explorer and tap **Shift**, a radial menu appears under the pointer. Move onto an action,
 let go, and the result is saved next to the original.
 
-Everything runs locally. Kumo has no account, no telemetry, no advertising and makes no network requests.
+Everything runs locally. Kumo has no account, no telemetry and no advertising. Your files never leave your computer;
+the only network request is an optional, at most daily check of the project's GitHub Releases for a new version.
 
 > Status: early development (0.1). The core interaction and file operations work and are covered by automated
 > tests, but Kumo has not yet been validated on a wide range of machines. See [Known limitations](#known-limitations).
@@ -82,6 +83,14 @@ Safety rules that apply to every action:
 - "Keep original files" can be turned off; originals then go to the Recycle Bin after a successful result.
 
 Not supported yet: DOCX, audio, video, TIFF, HEIC, resizing by scale, and PDF text extraction.
+
+## Updates
+
+Kumo can tell you when a new version is published on GitHub (Settings → Updates: Stable or Beta channel, automatic
+checks on or off, "Check for updates"). Today it announces the update and opens the release page; installing updates
+by itself is built and tested but stays off until releases are code-signed. Store copies are updated by the Microsoft
+Store. Local builds never check. Details: [versioning](docs/versioning.md), [releases](docs/releases.md),
+[updater](docs/updater.md), [distribution](docs/distribution.md).
 
 ## Settings
 

@@ -6,7 +6,7 @@
 | --- | --- |
 | Idle CPU | about 0 % |
 | Idle memory | 60 MB or less private working set |
-| Background work | no polling, no periodic timers, no network, no continuous animation |
+| Background work | no polling, no periodic timers, no network except an optional daily update check, no continuous animation |
 | Overlay | appears quickly; UI stays responsive during conversions |
 
 ## Measurements
@@ -77,6 +77,14 @@ $p.TotalProcessorTime
 ```
 
 The overlay logs `"ms"` with each "Overlay activated" and "Menu opened" entry in `%LOCALAPPDATA%\Kumo\logs`.
+
+## Update checks
+
+The updater adds no threads and no recurring timer, only a one-shot timer 30 s after start-up. With the updater in
+place the Release build measured, on the same
+machine: ready for input in 165–182 ms, 15.2 MB private working set 40 s after launch (after the deferred update
+check), and 0 ms of CPU over the next 60 s. Local builds have no update repository, so these figures do not include a
+network request; a real check is a few small HTTPS requests and its client releases connections after a minute.
 
 ## Not measured yet
 

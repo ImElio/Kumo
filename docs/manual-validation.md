@@ -38,3 +38,17 @@ actually executed. Last updated 2026-10-19 on Windows 11 Pro 10.0.26200, one mon
 | Remote Desktop session | | Pending |
 | Pen and touch drags | | Pending |
 | Windows 10 22H2 | | Pending |
+
+## Updates
+
+| Check | How | Status |
+| --- | --- | --- |
+| Local build shows "update checks aren't available" and no tray item | Settings → Updates | Checked (screenshot) |
+| Real check against a published release | CI build of a tagged release with at least two published releases | Pending (no repository or releases yet) |
+| Beta channel picks the highest beta/rc | Same, with pre-releases | Pending (unit-tested with mocked HTTP) |
+| Rate limit message and back-off | Exhaust the unauthenticated limit | Pending (unit-tested) |
+| Offline check shows the connection message | Disconnect, Check for updates | Pending (unit-tested) |
+| Tray notification once per version, Later snoozes | Automatic check with an available update | Pending (unit-tested) |
+| Signed installer download, verification and handoff | Requires a signed installer release and `KUMO_UPDATE_PUBLISHER` | Blocked: no installer or signing yet |
+| Store-installed copy shows "Updates managed by Microsoft Store" | Install from the Store | Blocked: not in the Store yet |
+| Release workflow end to end | Push a tag in a test fork with the `release` environment configured | Pending |
