@@ -44,7 +44,7 @@ shell drag is in progress, and the thread sleeps in `GetMessage` otherwise.
 overlay created a Direct3D device whose buffers stayed committed: after 13 menu cycles private bytes were about
 145 MB with hardware rendering and 62 MB with software rendering. The overlay is small and static, so drawing it in
 software costs nothing noticeable. Editor windows (crop, settings) keep hardware rendering: applying software rendering
-process-wide made dragging in the editor flicker.
+process-wide was the likely cause of the flicker reported while dragging in the editor.
 
 **Pre-building the overlay.** Creating the first WPF window takes about 400 ms (framework resources, fonts, the
 layered window). Kumo builds the overlay once at application-idle priority after start-up, which moves the first
