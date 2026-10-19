@@ -63,6 +63,10 @@ internal sealed class KumoApplication : Application
             args.SetObserved();
         };
 
+        // Kumo's windows are small and mostly static; software rendering avoids creating a Direct3D device whose
+        // buffers would otherwise stay committed for the lifetime of a background utility.
+        System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
+
         _log.MinimumLevel = _settings.DiagnosticLogging ? LogLevel.Debug : LogLevel.Info;
         _log.Info("Kumo started", ("version", typeof(KumoApplication).Assembly.GetName().Version?.ToString()), ("pid", Environment.ProcessId));
 

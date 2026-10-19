@@ -94,15 +94,16 @@ internal sealed class RadialOverlayWindow : Window
         OverlayWindowInterop.CenterOn(Handle, point);
     }
 
-    public void SetInteractive(bool interactive)
+    /// <returns>Whether the window became the foreground window; Windows may refuse while another app holds it.</returns>
+    public bool SetInteractive(bool interactive)
     {
         IsInteractive = interactive;
         OverlayWindowInterop.SetActivatable(Handle, interactive);
-        if (interactive && IsVisible)
-        {
-            OverlayWindowInterop.TryBringToFront(Handle);
-            Activate();
-        }
+        if (!interactive || !IsVisible)
+            return false;
+        bool foreground = OverlayWindowInterop.TryBringToFront(Handle);
+        Activate();
+        return foreground;
     }
 
     public void SetStatus(string text, params StatusAction[] actions)

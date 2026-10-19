@@ -19,6 +19,13 @@
     <Content Include="..\..\assets\icons\kumo.ico" Link="kumo.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- SkiaSharp's native package carries an 80 MB symbol file that is only useful for debugging Skia itself. -->
+  <Target Name="ExcludeSymbolsFromPublish" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <ProjectReference Include="..\Kumo.Core\Kumo.Core.csproj" />
     <ProjectReference Include="..\Kumo.Operations\Kumo.Operations.csproj" />

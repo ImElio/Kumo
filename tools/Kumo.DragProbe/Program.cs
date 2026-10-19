@@ -23,7 +23,7 @@ internal static partial class Program
 
         string kumoPath = Path.GetFullPath(args[0]);
         string sample = Path.GetFullPath(args[1]);
-        string[] scenarios = args.Length > 2 ? args[2..] : ["drop", "escape", "elsewhere", "hold"];
+        string[] scenarios = args.Length > 2 ? args[2..] : ["drop", "escape", "elsewhere", "hold", "hotkey"];
         string folder = Path.GetDirectoryName(sample)!;
 
         using var kumo = StartKumo(kumoPath);
@@ -41,6 +41,7 @@ internal static partial class Program
                     "escape" => CancelWithEscape(item, sample),
                     "elsewhere" => ReleaseElsewhere(item, explorer, sample),
                     "hold" => HoldShiftKeepsExplorerSemantics(item, sample),
+                    "hotkey" => HotkeyOpensMenuForSelection(explorer, Path.GetFileNameWithoutExtension(sample)),
                     _ => (false, "unknown scenario"),
                 };
                 Console.WriteLine($"{(passed ? "PASS" : "FAIL")} {scenario}: {detail}");
@@ -210,6 +211,36 @@ internal static partial class Program
         bool activated = lines.Any(l => l.Contains("\"Overlay activated\""));
         bool intact = File.Exists(sample);
         return (!activated && intact, $"overlayStayedClosed={!activated} sourceIntact={intact}");
+    }
+
+    // Selects the sample through UI Automation, presses the default shortcut and closes the menu with Escape,
+    // which only works if the menu received keyboard focus.
+    private static (bool, string) HotkeyOpensMenuForSelection(AutomationElement explorer, string stem)
+    {
+        long mark = LogMark();
+        var items = explorer.FindAll(TreeScope.Descendants, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ListItem));
+        var item = items.Cast<AutomationElement>().FirstOrDefault(i => i.Current.Name.StartsWith(stem, StringComparison.OrdinalIgnoreCase));
+        if (item == null || !item.TryGetCurrentPattern(SelectionItemPattern.Pattern, out var pattern))
+            return (false, "sample item not selectable");
+        ((SelectionItemPattern)pattern).Select();
+        explorer.SetFocus();
+        Thread.Sleep(400);
+
+        Input.Key(0x11, down: true);
+        Input.Key(0x12, down: true);
+        Input.Key(0x4B, down: true);
+        Input.Key(0x4B, down: false);
+        Input.Key(0x12, down: false);
+        Input.Key(0x11, down: false);
+        Thread.Sleep(1500);
+        Input.Key(0x1B, down: true);
+        Input.Key(0x1B, down: false);
+        Thread.Sleep(600);
+
+        var lines = LogSince(mark);
+        bool opened = lines.Any(l => l.Contains("\"Menu opened\"") && l.Contains("\"files\":1") && l.Contains("\"source\":\"keyboard\""));
+        bool closedByKeyboard = lines.Any(l => l.Contains("\"Overlay dismissed\"") && l.Contains("\"reason\":\"escape\""));
+        return (opened && closedByKeyboard, $"openedWithSelection={opened} escapeReachedMenu={closedByKeyboard}");
     }
 
     private static AutomationElement? FindOverlay(int pid)

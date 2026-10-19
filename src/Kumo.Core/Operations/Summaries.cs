@@ -74,5 +74,21 @@ public static class Summaries
         return $"{verb} {Math.Min(progress.Completed + 1, progress.Total)} of {progress.Total}…";
     }
 
+    /// <summary>Why no action is offered, phrased for the person who dropped the files.</summary>
+    public static string Unavailable(IReadOnlyList<InputFile> files, bool includedFolders)
+    {
+        if (files.Count == 0)
+            return includedFolders ? "Kumo works with files, not folders." : "Kumo couldn't read these files.";
+        var unknown = files.FirstOrDefault(f => f.Kind == FileKind.Unknown);
+        if (unknown != null)
+        {
+            string extension = Path.GetExtension(unknown.Path).TrimStart('.').ToUpperInvariant();
+            return extension.Length > 0 ? $"Kumo doesn't support {extension} files yet." : "Kumo doesn't recognise this kind of file.";
+        }
+        return files.Select(f => f.Kind).Distinct().Count() > 1
+            ? "These files have no action in common. Try them separately."
+            : $"There's nothing Kumo can do with {files[0].Kind.DisplayName()} files yet.";
+    }
+
     private static string Files(int count) => count == 1 ? "1 file" : $"{count} files";
 }

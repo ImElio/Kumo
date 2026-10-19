@@ -57,7 +57,7 @@ internal sealed class OverlayController : IDisposable
     private readonly IFileOperationRegistry _registry;
     private readonly IOperationExecutor _executor;
     private readonly IFileTypeResolver _resolver;
-    private readonly DispatcherTimer _dwellTimer = new(DispatcherPriority.Input);
+    private readonly HoverDwell _dwell = new();
     private readonly DispatcherTimer _dismissTimer = new(DispatcherPriority.Background);
     private readonly DispatcherTimer _resultTimer = new(DispatcherPriority.Background);
     private readonly List<Job> _jobs = [];
@@ -69,8 +69,6 @@ internal sealed class OverlayController : IDisposable
     private bool _filesFromCurrentDrag;
     private bool _dropAccepted;
     private int _loadGeneration;
-    private RadialHit _dwellTarget = RadialHit.Outside;
-    private Action? _dwellAction;
     private Job? _attachedJob;
 
     public OverlayController(KumoApplication app, IFileOperationRegistry registry, IOperationExecutor executor, IFileTypeResolver resolver)
@@ -79,7 +77,6 @@ internal sealed class OverlayController : IDisposable
         _registry = registry;
         _executor = executor;
         _resolver = resolver;
-        _dwellTimer.Tick += (_, _) => CompleteDwell();
         _dismissTimer.Tick += (_, _) => OnDropGraceElapsed();
         _resultTimer.Tick += (_, _) => OnResultTimeout();
     }
@@ -119,18 +116,22 @@ internal sealed class OverlayController : IDisposable
     public void OpenForFiles(IReadOnlyList<string> paths, ScreenPoint point, bool fromKeyboard)
     {
         var window = Prepare(point);
+        _phase = Phase.Menu;
+        window.SetStatus("Reading files…");
         window.ShowAt(point);
         EnterClickMode();
         BeginLoading(paths, focusFirst: fromKeyboard);
+        _app.Log.Info("Menu opened", ("files", paths.Count), ("source", fromKeyboard ? "keyboard" : "pointer"));
     }
 
     public async void OpenForSelection()
     {
         try
         {
-            var files = await ExplorerSelection.GetForForegroundAsync(TimeSpan.FromSeconds(2));
+            var files = await ExplorerSelection.GetForForegroundAsync(TimeSpan.FromSeconds(5));
             if (files.Count == 0)
             {
+                _app.Log.Info("Shortcut used without a selection");
                 _app.Notify("Nothing selected", "Select files in File Explorer or on the desktop, then press the shortcut again.", TrayNotificationKind.Info);
                 return;
             }
@@ -149,7 +150,7 @@ internal sealed class OverlayController : IDisposable
         var pending = _jobs.Select(j => j.Completion).OfType<Task>().ToArray();
         if (pending.Length > 0)
             Task.WaitAny(Task.WhenAll(pending), Task.Delay(TimeSpan.FromSeconds(3)));
-        _dwellTimer.Stop();
+        _dwell.Cancel();
         _dismissTimer.Stop();
         _resultTimer.Stop();
         _window?.Close();
@@ -249,22 +250,22 @@ internal sealed class OverlayController : IDisposable
         _window.Menu.Hub.MascotState = hit.Kind == RadialHitKind.Segment ? MascotState.Hovering : MascotState.Dragging;
         if (hit.Kind == RadialHitKind.Outside)
         {
-            CancelDwell();
+            _dwell.Cancel();
             return;
         }
 
         e.Effects = DragDropEffects.Copy;
         if (hit.Kind == RadialHitKind.Segment && _model.Items[hit.Index].OpensSubmenu)
-            StartDwell(hit, CategoryDwell, () => Invoke(hit.Index, fromDrop: false));
+            _dwell.Start(hit, CategoryDwell, () => Invoke(hit.Index, fromDrop: false));
         else if (hit.Kind == RadialHitKind.Hub && !_model.IsAtRoot)
-            StartDwell(hit, BackDwell, () => GoBack());
+            _dwell.Start(hit, BackDwell, () => GoBack());
         else
-            CancelDwell();
+            _dwell.Cancel();
     }
 
     private void OnDragLeave(object sender, DragEventArgs e)
     {
-        CancelDwell();
+        _dwell.Cancel();
         _window?.Menu.Highlight(RadialHit.Outside);
         if (_window != null && _phase == Phase.Menu)
             _window.Menu.Hub.MascotState = MascotState.Dragging;
@@ -277,7 +278,7 @@ internal sealed class OverlayController : IDisposable
     {
         e.Handled = true;
         e.Effects = DragDropEffects.None;
-        CancelDwell();
+        _dwell.Cancel();
         if (_window == null || _phase != Phase.Menu || _model is not { IsEmpty: false })
             return;
 
@@ -378,7 +379,7 @@ internal sealed class OverlayController : IDisposable
         _app.Log.Debug("Files inspected", ("files", files.Count), ("kinds", string.Join(",", files.Select(f => f.Kind).Distinct())));
         if (_model.IsEmpty)
         {
-            ShowUnavailable(UnavailableReason(files, hadFolders));
+            ShowUnavailable(Summaries.Unavailable(files, hadFolders));
             return;
         }
 
@@ -387,21 +388,6 @@ internal sealed class OverlayController : IDisposable
         window.SetStatus(MenuStatus());
         if (focusFirst)
             window.Menu.FocusSegment(0);
-    }
-
-    private static string UnavailableReason(IReadOnlyList<InputFile> files, bool hadFolders)
-    {
-        if (files.Count == 0)
-            return hadFolders ? "Kumo works with files, not folders." : "Kumo couldn't read these files.";
-        var unknown = files.FirstOrDefault(f => f.Kind == FileKind.Unknown);
-        if (unknown != null)
-        {
-            string extension = Path.GetExtension(unknown.Path).TrimStart('.').ToUpperInvariant();
-            return extension.Length > 0 ? $"Kumo doesn't support {extension} files yet." : "Kumo doesn't recognise this kind of file.";
-        }
-        return files.Select(f => f.Kind).Distinct().Count() > 1
-            ? "These files have no action in common. Try them separately."
-            : $"There's nothing Kumo can do with {files[0].Kind.DisplayName()} files yet.";
     }
 
     private void ShowUnavailable(string message)
@@ -426,7 +412,7 @@ internal sealed class OverlayController : IDisposable
     {
         if (_model == null || _window == null || _phase != Phase.Menu)
             return;
-        CancelDwell();
+        _dwell.Cancel();
         var activation = _model.Activate(index);
         switch (activation.Kind)
         {
@@ -450,7 +436,7 @@ internal sealed class OverlayController : IDisposable
     {
         if (_model == null || _window == null || !_model.Back())
             return false;
-        CancelDwell();
+        _dwell.Cancel();
         _window.Menu.ShowItems(_model.Items, showIcons: true, animate: true);
         _window.Menu.Hub.ShowsBack = false;
         _window.SetStatus(MenuStatus());
@@ -463,9 +449,10 @@ internal sealed class OverlayController : IDisposable
     {
         if (_window == null || _phase == Phase.Hidden)
             return;
-        _window.SetInteractive(true);
+        bool foreground = _window.SetInteractive(true);
         _window.Menu.Hub.MascotState = MascotState.Idle;
         _app.SetPointerTracking(true);
+        _app.Log.Debug("Menu became interactive", ("foreground", foreground));
     }
 
     private async void StartJob(MenuEntry entry)
@@ -637,34 +624,9 @@ internal sealed class OverlayController : IDisposable
         }
     }
 
-    private void StartDwell(RadialHit target, TimeSpan delay, Action action)
-    {
-        if (target == _dwellTarget && _dwellTimer.IsEnabled)
-            return;
-        _dwellTarget = target;
-        _dwellAction = action;
-        _dwellTimer.Interval = delay;
-        _dwellTimer.Stop();
-        _dwellTimer.Start();
-    }
-
-    private void CancelDwell()
-    {
-        _dwellTimer.Stop();
-        _dwellTarget = RadialHit.Outside;
-        _dwellAction = null;
-    }
-
-    private void CompleteDwell()
-    {
-        var action = _dwellAction;
-        CancelDwell();
-        action?.Invoke();
-    }
-
     private void StopTimers()
     {
-        CancelDwell();
+        _dwell.Cancel();
         _dismissTimer.Stop();
         _resultTimer.Stop();
     }

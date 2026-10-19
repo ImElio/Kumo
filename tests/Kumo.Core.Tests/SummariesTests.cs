@@ -66,4 +66,14 @@ public class SummariesTests
         Assert.Equal("Converting…", Summaries.Progress(Entry, new BatchProgress(0, 1, "a", 0)));
         Assert.Equal("Converting 5 of 5…", Summaries.Progress(Entry, new BatchProgress(5, 5, "e", 1)));
     }
+
+    [Fact]
+    public void Unavailable_explains_folders_unknown_types_and_mixed_selections()
+    {
+        Assert.Equal("Kumo works with files, not folders.", Summaries.Unavailable([], includedFolders: true));
+        Assert.Equal("Kumo doesn't support DOCX files yet.", Summaries.Unavailable([new InputFile("report.docx", FileKind.Unknown, 1)], false));
+        Assert.Equal("These files have no action in common. Try them separately.",
+            Summaries.Unavailable([new InputFile("a.tif", FileKind.Tiff, 1), new InputFile("b.pdf", FileKind.Pdf, 1)], false));
+        Assert.Equal("There's nothing Kumo can do with TIFF files yet.", Summaries.Unavailable([new InputFile("a.tif", FileKind.Tiff, 1)], false));
+    }
 }
