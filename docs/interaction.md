@@ -54,8 +54,30 @@ and what has and has not been verified.
 ### Keyboard-only path
 
 Radial gestures are not the only entry point. Kumo also offers a global shortcut (registered with
-`RegisterHotKey`) and the tray menu, both of which open the same radial menu in click/keyboard mode.
-These are alternatives, not equivalents of drag interception.
+`RegisterHotKey`, default Ctrl+Alt+K) that reads the selection of the foreground File Explorer window or the
+desktop through `IShellWindows` → `IShellBrowser` → `IShellView`, and the tray menu, which opens a file picker.
+Both open the same radial menu in click/keyboard mode. They are alternatives, not equivalents of drag
+interception.
+
+## Menu behaviour
+
+| Situation | Behaviour |
+| --- | --- |
+| Gesture recognised | The overlay appears centred on the pointer (clamped to the monitor's work area) with Kumo in the hub and "Reading files…" below. |
+| Pointer enters the overlay | `DragEnter` reads `CF_HDROP`; files are inspected off the UI thread and the ring fills with the actions valid for every file. Folders and unknown types produce a short explanation instead. |
+| Hover a segment | It is highlighted, the status bar shows its full description, Kumo looks curious. |
+| Rest on a category for 350 ms | The ring changes to that category's choices (spring-loaded, like folders in File Explorer). |
+| Rest on the hub for 500 ms in a submenu | Back to the categories. |
+| Drop on an action | The drop is accepted as a copy, the action starts after `Drop` has returned to Explorer. |
+| Drop on a category or the hub | Kumo keeps the files and becomes a normal clickable, keyboard-focusable menu. |
+| Drop outside the ring | Rejected (no drop effect); the overlay closes 300 ms after the button is released. |
+| Escape during the drag | Explorer cancels its drag and the overlay closes. |
+| Click outside an interactive menu | The menu closes. During work the overlay hides and the result arrives as a notification. |
+| Working | The ring disappears; the hub shows a determinate progress ring, the status bar "Converting 2 of 5…" and Cancel. |
+| Finished | Kumo reacts (happy, concerned, neutral), the status bar shows the summary with Show and Close, and the overlay hides after 2.6 s (8 s for problems) unless the pointer is over it. |
+
+Operations that need input (page ranges, passwords) open a small dialog owned by the overlay. It is never shown
+while a drag is in progress.
 
 ## Verification
 
@@ -66,14 +88,19 @@ locating items through UI Automation, then checks Kumo's log and the file system
 synthesized at the OS level, Explorer performs a genuine `DoDragDrop` and Kumo receives a genuine OLE drop.
 It takes over the pointer for a few seconds and aborts if the pointer is moved by hand.
 
-Results on Windows 11 Pro 10.0.26200 (single monitor), 2026-10-19:
+Results on Windows 11 Pro 10.0.26200 (single monitor, 100 % scaling), 2026-10-19, against both Debug and
+Release builds:
 
 | Scenario | Result |
 | --- | --- |
-| Drag from Explorer, tap Shift, drop on the top segment | PASS: overlay shown, drop received with the file list and the correct segment; source file intact |
-| Tap Shift, press Escape | PASS: overlay dismissed, no drop, source intact |
-| Tap Shift, release over empty Explorer space | PASS: overlay dismissed after release, source intact |
-| Hold Shift for 700 ms during the drag (Explorer force-move) | PASS: overlay stays closed |
+| Drag from Explorer, tap Shift, rest on **Convert** until the formats appear, drop on **JPG** | PASS in 5 of 6 runs: drop accepted, the conversion ran, a valid `.jpg` was written next to the source, source intact. One Release run, the first drag after start-up, did not accept the drop and the overlay closed after release; the cause was not captured because detailed logging was off, and it did not reproduce in the four runs that followed. Debug logging of drag entry and rejected drops was added to diagnose it if it recurs. |
+| Tap Shift, press Escape | PASS (all runs): overlay dismissed, no drop, source intact |
+| Tap Shift, release over empty Explorer space | PASS (all runs): overlay dismissed after release, source intact |
+| Hold Shift for 700 ms during the drag (Explorer force-move) | PASS (all runs): overlay stays closed |
+| Select the file, press Ctrl+Alt+K, then Escape | PASS (all runs): menu opened with the Explorer selection, took the foreground, and closed on Escape |
+
+The click/keyboard path was also driven through UI Automation (invoking segments by their accessible names):
+Convert → JPG produced the file and showed "Saved 1 file" with Show and Close.
 
 Run it with:
 
@@ -82,6 +109,10 @@ dotnet build Kumo.slnx
 tools/Kumo.DragProbe/bin/Debug/net10.0-windows/Kumo.DragProbe.exe `
   src/Kumo.App/bin/Debug/net10.0-windows10.0.19041.0/Kumo.exe C:\path\to\kumo-probe\sample.png
 ```
+
+Optional trailing arguments pick scenarios (`drop escape elsewhere hold hotkey`; all by default). The sample should
+be a PNG alone in its folder; the probe deletes the `.jpg` it creates. It restarts Kumo, opens and closes its own
+Explorer window, and sends Shift, Escape and Ctrl+Alt+K.
 
 ### Unit tests
 

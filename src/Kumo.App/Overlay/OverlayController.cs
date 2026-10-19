@@ -250,6 +250,7 @@ internal sealed class OverlayController : IDisposable
 
     private void OnDragEnter(object sender, DragEventArgs e)
     {
+        _app.Log.Debug("Drag entered overlay", ("phase", _phase.ToString()), ("filesKnown", _filesFromCurrentDrag));
         _dismissTimer.Stop();
         if (!_filesFromCurrentDrag && _phase is Phase.AwaitingFiles or Phase.Menu)
         {
@@ -300,7 +301,10 @@ internal sealed class OverlayController : IDisposable
         e.Effects = DragDropEffects.None;
         _dwell.Cancel();
         if (_window == null || _phase != Phase.Menu || _model is not { IsEmpty: false })
+        {
+            _app.Log.Debug("Drop rejected", ("phase", _phase.ToString()), ("menuReady", _model is { IsEmpty: false }));
             return;
+        }
 
         var hit = _window.Menu.HitTest(e.GetPosition(_window.Menu));
         if (hit.Kind == RadialHitKind.Outside)
