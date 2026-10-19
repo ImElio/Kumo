@@ -21,6 +21,7 @@ internal sealed class RadialOverlayWindow : Window
     private readonly List<Path> _segments = [];
     private readonly TextBlock _status = new();
     private int _highlighted = -1;
+    private IReadOnlyList<string> _heldFiles = [];
 
     public RadialOverlayWindow()
     {
@@ -41,6 +42,13 @@ internal sealed class RadialOverlayWindow : Window
         DragOver += OnDragOver;
         DragLeave += (_, _) => Highlight(-1);
         Drop += OnDrop;
+        MouseMove += (_, e) => Highlight(ClickHit(e.GetPosition(_canvas)));
+        MouseLeftButtonUp += OnClick;
+        KeyDown += (_, e) =>
+        {
+            if (e.Key == System.Windows.Input.Key.Escape)
+                Hide();
+        };
         SourceInitialized += (_, _) => OverlayWindowInterop.ApplyOverlayStyles(Handle);
     }
 
@@ -48,10 +56,23 @@ internal sealed class RadialOverlayWindow : Window
 
     public bool DropReceived { get; private set; }
 
-    private nint Handle => new WindowInteropHelper(this).EnsureHandle();
+    public nint Handle => new WindowInteropHelper(this).EnsureHandle();
+
+    public bool IsHoldingFiles => _heldFiles.Count > 0 && IsVisible;
+
+    public void ShowForFiles(IReadOnlyList<string> files, ScreenPoint point)
+    {
+        ShowAt(point);
+        _heldFiles = files;
+        _status.Text = $"{files.Count} file(s)";
+        OverlayWindowInterop.SetActivatable(Handle, true);
+        Activate();
+    }
 
     public void ShowAt(ScreenPoint point)
     {
+        _heldFiles = [];
+        OverlayWindowInterop.SetActivatable(Handle, false);
         DropReceived = false;
         Highlight(-1);
         _status.Text = "Drop on an action";
@@ -125,6 +146,24 @@ internal sealed class RadialOverlayWindow : Window
     {
         var p = e.GetPosition(_canvas);
         return RadialGeometry.HitTest(p.X - Size / 2, p.Y - Size / 2, Categories.Length, InnerRadius, OuterRadius);
+    }
+
+    private int ClickHit(Point p)
+    {
+        if (_heldFiles.Count == 0)
+            return -1;
+        var hit = RadialGeometry.HitTest(p.X - Size / 2, p.Y - Size / 2, Categories.Length, InnerRadius, OuterRadius);
+        return hit.Kind == RadialHitKind.Segment ? hit.Index : -1;
+    }
+
+    private void OnClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        int index = ClickHit(e.GetPosition(_canvas));
+        if (index < 0)
+            return;
+        var files = _heldFiles;
+        _heldFiles = [];
+        FilesDropped?.Invoke(files, Categories[index]);
     }
 
     private void OnDragOver(object sender, DragEventArgs e)

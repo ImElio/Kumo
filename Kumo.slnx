@@ -9,6 +9,7 @@
     <Project Path="tests/Kumo.Windows.Tests/Kumo.Windows.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Kumo.AssetGen/Kumo.AssetGen.csproj" />
     <Project Path="tools/Kumo.DragProbe/Kumo.DragProbe.csproj" />
   </Folder>
 </Solution>

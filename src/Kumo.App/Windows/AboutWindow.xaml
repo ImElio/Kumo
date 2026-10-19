@@ -1,0 +1,21 @@
+<Window x:Class="Kumo.App.Windows.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mascot="clr-namespace:Kumo.App.Mascot"
+        Title="About Kumo"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen">
+  <StackPanel Margin="32,24" MaxWidth="360">
+    <mascot:KumoMascot Width="96" Height="96" HorizontalAlignment="Center" />
+    <TextBlock Text="Kumo" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,0" />
+    <TextBlock x:Name="VersionText" HorizontalAlignment="Center" Opacity="0.72" Margin="0,2,0,12" />
+    <TextBlock TextWrapping="Wrap" TextAlignment="Center"
+               Text="A small file companion for Windows. Drag files from File Explorer, tap Shift, and choose what to do." />
+    <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.72" Margin="0,10,0,0"
+               Text="Everything runs on this computer. No account, no telemetry, no network access." />
+    <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.72" Margin="0,10,0,0" FontSize="12"
+               Text="Released under the MIT License." />
+    <Button Content="Close" IsCancel="True" IsDefault="True" MinWidth="96" HorizontalAlignment="Center" Margin="0,20,0,0" />
+  </StackPanel>
+</Window>

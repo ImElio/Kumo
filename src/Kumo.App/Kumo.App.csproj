@@ -10,7 +10,14 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <StartupObject>Kumo.App.Program</StartupObject>
     <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+    <ApplicationIcon>..\..\assets\icons\kumo.ico</ApplicationIcon>
+    <!-- WPF0001: Window.ThemeMode (Fluent styling for Settings and About) is still flagged experimental in .NET 10. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\assets\icons\kumo.ico" Link="kumo.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kumo.Core\Kumo.Core.csproj" />
