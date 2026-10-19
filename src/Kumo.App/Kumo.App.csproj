@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kumo.Core\Kumo.Core.csproj" />
+    <ProjectReference Include="..\Kumo.Operations\Kumo.Operations.csproj" />
     <ProjectReference Include="..\Kumo.Windows\Kumo.Windows.csproj" />
   </ItemGroup>
 

@@ -4,9 +4,12 @@ using System.Windows.Threading;
 using Kumo.App.Overlay;
 using Kumo.App.Windows;
 using Kumo.Core.Diagnostics;
+using Kumo.Core.Files;
+using Kumo.Core.Operations;
 using Kumo.Core.Settings;
 using Kumo.Windows.Input;
 using Kumo.Windows.Interop;
+using Kumo.Operations;
 using Kumo.Windows.Shell;
 using Microsoft.Win32;
 
@@ -32,7 +35,7 @@ internal sealed class KumoApplication : Application
     private TrayIcon? _tray;
     private HotkeyRegistration? _hotkey;
     private GlobalDragMonitor? _monitor;
-    private MenuPresenter? _menu;
+    private OverlayController? _menu;
     private SettingsWindow? _settingsWindow;
     private AboutWindow? _aboutWindow;
 
@@ -63,7 +66,8 @@ internal sealed class KumoApplication : Application
         _log.MinimumLevel = _settings.DiagnosticLogging ? LogLevel.Debug : LogLevel.Info;
         _log.Info("Kumo started", ("version", typeof(KumoApplication).Assembly.GetName().Version?.ToString()), ("pid", Environment.ProcessId));
 
-        _menu = new MenuPresenter(this);
+        _menu = new OverlayController(this, new OperationRegistry(KumoOperations.CreateAll()),
+            new OperationExecutor(_log, new ShellRecycleBin()), new SignatureFileTypeResolver());
 
         _messageWindow = new MessageWindow();
         _messageWindow.UnhandledException += ex => _log.Error("Message window handler failed", ex);
@@ -71,6 +75,11 @@ internal sealed class KumoApplication : Application
         _tray.MenuProvider = BuildTrayMenu;
         _tray.MenuCommand += id => OnTrayCommand((TrayCommand)id);
         _tray.Invoked += OpenKumo;
+        _tray.NotificationClicked += () =>
+        {
+            if (_menu?.LastOutput is { } output)
+                OverlayController.Reveal(output);
+        };
         _tray.Show();
         if (!_tray.IsVisible)
             _log.Warning("Tray icon could not be added");
@@ -183,7 +192,7 @@ internal sealed class KumoApplication : Application
         var files = CommandLine.Files(arguments);
         if (files.Length > 0)
         {
-            _menu?.OpenForFiles(files, OverlayWindowInterop.GetCursorPosition());
+            _menu?.OpenForFiles(files, OverlayWindowInterop.GetCursorPosition(), fromKeyboard: false);
             return;
         }
         if (fromAnotherLaunch && !arguments.Contains(CommandLine.Background))
@@ -199,7 +208,7 @@ internal sealed class KumoApplication : Application
             CheckFileExists = true,
         };
         if (dialog.ShowDialog() == true && dialog.FileNames.Length > 0)
-            _menu?.OpenForFiles(dialog.FileNames, OverlayWindowInterop.GetCursorPosition());
+            _menu?.OpenForFiles(dialog.FileNames, OverlayWindowInterop.GetCursorPosition(), fromKeyboard: false);
     }
 
     private IReadOnlyList<TrayMenuItem> BuildTrayMenu() =>
@@ -301,4 +310,9 @@ internal sealed class KumoApplication : Application
         Notify("Something went wrong", "Kumo recovered from an unexpected error. Details are in the log.", TrayNotificationKind.Error);
         e.Handled = true;
     }
+}
+
+internal sealed class ShellRecycleBin : IRecycleBin
+{
+    public void Recycle(string path) => RecycleBin.Send(path);
 }
