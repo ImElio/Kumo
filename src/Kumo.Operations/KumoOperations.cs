@@ -7,6 +7,8 @@ namespace Kumo.Operations;
 
 public static class KumoOperations
 {
+    public const int MinimumPasswordLength = PdfProtectOperation.MinimumPasswordLength;
+
     /// <summary>Every operation Kumo ships, in the order entries appear within a category.</summary>
     public static IReadOnlyList<IFileOperation> CreateAll() =>
     [
