@@ -49,12 +49,6 @@
     <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
   </Style>
 
-  <Style x:Key="CardControl" TargetType="FrameworkElement">
-    <Setter Property="DockPanel.Dock" Value="Right" />
-    <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="Margin" Value="16,0,0,0" />
-  </Style>
-
   <Style x:Key="CaptionButton" TargetType="Button">
     <Setter Property="Width" Value="46" />
     <Setter Property="Height" Value="32" />
@@ -97,10 +91,21 @@
     </Setter>
   </Style>
 
+  <!-- Shown by WPF only when focus arrives from the keyboard, so clicking a section never draws a frame. -->
+  <Style x:Key="NavFocusVisual">
+    <Setter Property="Control.Template">
+      <Setter.Value>
+        <ControlTemplate>
+          <Border CornerRadius="6" BorderThickness="2" BorderBrush="{DynamicResource TextFillColorPrimaryBrush}" />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <Style x:Key="NavItem" TargetType="ListBoxItem">
     <Setter Property="Padding" Value="12,9" />
     <Setter Property="Margin" Value="0,1" />
-    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="FocusVisualStyle" Value="{StaticResource NavFocusVisual}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ListBoxItem">
@@ -110,7 +115,6 @@
             </Border>
             <Border x:Name="Pill" Width="3" Height="16" CornerRadius="1.5" HorizontalAlignment="Left"
                     Background="{StaticResource KumoAccent}" Visibility="Collapsed" />
-            <Border x:Name="Focus" CornerRadius="6" BorderThickness="2" BorderBrush="{DynamicResource TextFillColorPrimaryBrush}" Visibility="Collapsed" />
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
@@ -119,9 +123,6 @@
             <Trigger Property="IsSelected" Value="True">
               <Setter TargetName="Back" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
               <Setter TargetName="Pill" Property="Visibility" Value="Visible" />
-            </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
-              <Setter TargetName="Focus" Property="Visibility" Value="Visible" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>

@@ -91,7 +91,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE7E8;" />
-                <CheckBox x:Name="StartWithWindows" Style="{StaticResource CardControl}" AutomationProperties.Name="Start with Windows" />
+                <CheckBox x:Name="StartWithWindows" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" AutomationProperties.Name="Start with Windows" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Start with Windows" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="Kumo waits quietly in the notification area after you sign in." />
@@ -101,7 +101,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE790;" />
-                <ComboBox x:Name="ThemeBox" Style="{StaticResource CardControl}" MinWidth="200" AutomationProperties.Name="Theme" />
+                <ComboBox x:Name="ThemeBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="200" AutomationProperties.Name="Theme" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Theme" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="Colours of the radial menu and these windows." />
@@ -111,7 +111,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xEA8F;" />
-                <ComboBox x:Name="NotificationsBox" Style="{StaticResource CardControl}" MinWidth="200" AutomationProperties.Name="Notifications" />
+                <ComboBox x:Name="NotificationsBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="200" AutomationProperties.Name="Notifications" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Notifications" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="Results of work that finishes after the menu has closed." />
@@ -121,7 +121,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE774;" />
-                <ComboBox x:Name="LanguageBox" Style="{StaticResource CardControl}" MinWidth="200" AutomationProperties.Name="Language" />
+                <ComboBox x:Name="LanguageBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="200" AutomationProperties.Name="Language" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Language" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="More languages are planned." />
@@ -135,7 +135,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE7C9;" />
-                <ComboBox x:Name="ActivationBox" Style="{StaticResource CardControl}" MinWidth="200" AutomationProperties.Name="Open while dragging" />
+                <ComboBox x:Name="ActivationBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="200" AutomationProperties.Name="Open while dragging" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Open while dragging" />
                   <TextBlock x:Name="ActivationHint" Style="{StaticResource CardDescription}" />
@@ -145,7 +145,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE765;" />
-                <StackPanel Style="{StaticResource CardControl}" Orientation="Horizontal">
+                <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" Orientation="Horizontal">
                   <TextBox x:Name="HotkeyBox" Width="150" IsReadOnly="True" IsReadOnlyCaretVisible="False" TextAlignment="Center"
                            AutomationProperties.Name="Keyboard shortcut. Focus this field and press the new combination."
                            PreviewKeyDown="OnHotkeyKeyDown" />
@@ -160,7 +160,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE71E;" />
-                <ComboBox x:Name="MenuSizeBox" Style="{StaticResource CardControl}" MinWidth="200" AutomationProperties.Name="Menu size" />
+                <ComboBox x:Name="MenuSizeBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="200" AutomationProperties.Name="Menu size" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Menu size" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="Diameter of the radial menu." />
@@ -170,7 +170,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE776;" />
-                <ComboBox x:Name="MotionBox" Style="{StaticResource CardControl}" MinWidth="200" AutomationProperties.Name="Motion" />
+                <ComboBox x:Name="MotionBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="200" AutomationProperties.Name="Motion" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Motion" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="Short transitions when the menu opens or changes." />
@@ -203,7 +203,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE74D;" />
-                <CheckBox x:Name="PreserveOriginals" Style="{StaticResource CardControl}" AutomationProperties.Name="Keep original files" />
+                <CheckBox x:Name="PreserveOriginals" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" AutomationProperties.Name="Keep original files" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Keep original files" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="When off, an original goes to the Recycle Bin after its result has been saved." />
@@ -213,7 +213,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE8C8;" />
-                <ComboBox x:Name="CollisionBox" Style="{StaticResource CardControl}" MinWidth="240" AutomationProperties.Name="If the result name exists" />
+                <ComboBox x:Name="CollisionBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="240" AutomationProperties.Name="If the result name exists" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="If the result name exists" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="Originals and files from the same batch are never replaced." />
@@ -236,7 +236,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE895;" />
-                <Button x:Name="UpdateActionButton" Style="{StaticResource CardControl}" MinWidth="150" Click="OnUpdateAction" />
+                <Button x:Name="UpdateActionButton" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="150" Click="OnUpdateAction" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock x:Name="UpdateStatusText" Style="{StaticResource CardTitle}" AutomationProperties.LiveSetting="Polite" />
                   <TextBlock x:Name="UpdateStatusDetail" Style="{StaticResource CardDescription}" />
@@ -247,7 +247,7 @@
               <StackPanel>
                 <DockPanel>
                   <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE8AB;" />
-                  <ComboBox x:Name="UpdateChannelBox" Style="{StaticResource CardControl}" MinWidth="240" AutomationProperties.Name="Update channel" />
+                  <ComboBox x:Name="UpdateChannelBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="240" AutomationProperties.Name="Update channel" />
                   <StackPanel VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource CardTitle}" Text="Update channel" />
                     <TextBlock x:Name="ChannelDescription" Style="{StaticResource CardDescription}" />
@@ -264,7 +264,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE823;" />
-                <CheckBox x:Name="AutomaticUpdates" Style="{StaticResource CardControl}" AutomationProperties.Name="Automatically check for updates" />
+                <CheckBox x:Name="AutomaticUpdates" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" AutomationProperties.Name="Automatically check for updates" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Automatically check for updates" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="Check for new versions automatically." />
@@ -278,7 +278,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xEC4A;" />
-                <ComboBox x:Name="ConcurrencyBox" Style="{StaticResource CardControl}" MinWidth="120" AutomationProperties.Name="Files processed at once" />
+                <ComboBox x:Name="ConcurrencyBox" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="120" AutomationProperties.Name="Files processed at once" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Files processed at once" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="Higher is faster for big batches but uses more memory." />
@@ -288,7 +288,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xEBE8;" />
-                <CheckBox x:Name="DiagnosticLogging" Style="{StaticResource CardControl}" AutomationProperties.Name="Detailed diagnostic logging" />
+                <CheckBox x:Name="DiagnosticLogging" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" AutomationProperties.Name="Detailed diagnostic logging" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Detailed diagnostic logging" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="Logs stay on this computer for seven days. Detailed logs include file paths." />
@@ -298,7 +298,7 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xED25;" />
-                <Button Style="{StaticResource CardControl}" Content="Open folder" MinWidth="120" Click="OnOpenLogs" />
+                <Button DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" Content="Open folder" MinWidth="120" Click="OnOpenLogs" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource CardTitle}" Text="Logs" />
                   <TextBlock Style="{StaticResource CardDescription}" Text="%LOCALAPPDATA%\Kumo\logs" />
