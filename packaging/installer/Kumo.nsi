@@ -63,10 +63,17 @@ VIAddVersionKey "LegalCopyright" "Copyright (c) 2026 ImElio"
 !define MUI_ICON "${ICON}"
 !define MUI_UNICON "${ICON}"
 !define MUI_ABORTWARNING
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${__FILEDIR__}\sidebar.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "${__FILEDIR__}\sidebar.bmp"
+!define MUI_WELCOMEPAGE_TITLE "Welcome to Kumo"
+!define MUI_WELCOMEPAGE_TEXT "Kumo lives in the notification area. Drag files in File Explorer, tap Shift, and pick what to do with them.$\r$\n$\r$\nKumo installs for your account only and doesn't need administrator rights."
+!define MUI_COMPONENTSPAGE_NODESC
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Kumo.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Start Kumo"
 
+!insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${LICENSE_FILE}"
+!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -184,7 +191,8 @@ Function CloseKumo
   done:
 FunctionEnd
 
-Section "Kumo"
+Section "Kumo" SecKumo
+  SectionIn RO
   SetShellVarContext current
   Call RequireValidInstallDir
   Call CloseKumo
@@ -234,12 +242,26 @@ Section "Kumo"
   SetOutPath "$INSTDIR"
 SectionEnd
 
+; Silent runs are updates started by Kumo, so they keep the user's own choices about these two.
+Section "Desktop shortcut" SecDesktop
+  ${IfNot} ${Silent}
+    CreateShortcut "$DESKTOP\Kumo.lnk" "$INSTDIR\Kumo.exe"
+  ${EndIf}
+SectionEnd
+
+Section "Start with Windows" SecStartup
+  ${IfNot} ${Silent}
+    WriteRegStr HKCU "${RUN_KEY}" "Kumo" '"$INSTDIR\Kumo.exe" --background'
+  ${EndIf}
+SectionEnd
+
 ; Settings and logs in %LOCALAPPDATA%\Kumo are the user's and are kept.
 Section "Uninstall"
   ExecWait '"$INSTDIR\Kumo.exe" --exit'
   Sleep 1000
   DeleteRegValue HKCU "${RUN_KEY}" "Kumo"
   Delete "$SMPROGRAMS\Kumo.lnk"
+  Delete "$DESKTOP\Kumo.lnk"
   DeleteRegKey HKCU "${UNINSTALL_KEY}"
   SetOutPath "$TEMP"
   IfFileExists "$INSTDIR\Kumo.installation.json" 0 +2

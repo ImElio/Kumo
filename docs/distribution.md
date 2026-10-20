@@ -34,8 +34,10 @@ Upgrading a portable copy:
 | Upgrade safety | The existing folder is renamed to `Kumo.previous` before the new files are copied and restored if copying fails or is cancelled (`.onInstFailed`); it is removed only after success. |
 | Updater marker | Writes `Kumo.installation.json` (`{"kind":"installer","version":"…"}`), which tells Kumo it may update itself through the installer. |
 | Version resource | `ProductVersion` is the SemVer version, which Kumo checks before running a downloaded installer. |
+| Pages | Welcome (with the pink landscape image from `tools/Kumo.AssetGen`, also on the finish page), licence, options, folder, progress, finish with "Start Kumo". |
+| Options | "Desktop shortcut" and "Start with Windows", both on by default. Silent installs (Kumo's own updates) skip both, so a shortcut the user deleted or a startup they turned off in Settings stays that way. |
 | Registration | Start menu shortcut and an "Installed apps" entry under `HKCU\…\Uninstall\Kumo` (version, size, quiet uninstall string). |
-| Uninstall | Exits Kumo, removes the startup entry, shortcut, registry entry and the install folder. Settings and logs in `%LOCALAPPDATA%\Kumo` are kept. |
+| Uninstall | Exits Kumo, removes the startup entry, Start menu and desktop shortcuts, registry entry and the install folder. Settings and logs in `%LOCALAPPDATA%\Kumo` are kept. |
 | Silent use | `Kumo-<version>-win-x64-setup.exe /S [/relaunch] [/D=<folder>\Kumo]` and `Uninstall.exe /S`. `/relaunch` starts Kumo after a successful install; the updater uses it. |
 | Signing | `-SignCommand` in `package-release.ps1` (NSIS `!finalize` / `!uninstfinalize`) signs both the installer and the embedded uninstaller once a certificate exists. |
 

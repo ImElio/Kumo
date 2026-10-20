@@ -36,6 +36,7 @@ internal static partial class Program
         File.WriteAllBytes(Path.Combine(icons, "kumo.ico"), Icon(trimmed["idle"]));
         File.WriteAllBytes(Path.Combine(icons, "kumo-256.png"), Png(Scale(trimmed["idle"], 256)));
         File.WriteAllBytes(Path.Combine(mascot, "states.png"), StateSheet(trimmed));
+        File.WriteAllBytes(Path.Combine(root, "packaging", "installer", "sidebar.bmp"), InstallerSidebar(trimmed["idle"]));
         Console.WriteLine($"Assets written under {root}");
         return 0;
     }
@@ -108,6 +109,73 @@ internal static partial class Program
         using var stream = new MemoryStream();
         encoder.Save(stream);
         return stream.ToArray();
+    }
+
+    /// <summary>
+    /// The welcome and finish page image of the NSIS installer: a pink dusk landscape with Kumo floating above it.
+    /// NSIS needs a 24-bit BMP; it is drawn at twice the 164 × 314 page size so it stays sharp on scaled displays.
+    /// </summary>
+    private static byte[] InstallerSidebar(BitmapSource kumo)
+    {
+        const int width = 328, height = 628;
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawRectangle(Gradient(height, (0, "#FFE9E4F7"), (0.45, "#FFFBD3E0"), (0.75, "#FFF9B9C9")), null, new Rect(0, 0, width, height));
+            dc.DrawEllipse(new RadialGradientBrush(Color.FromArgb(0xCC, 0xFF, 0xF4, 0xE8), Color.FromArgb(0, 0xFF, 0xD6, 0xE2)),
+                null, new Point(width * 0.72, height * 0.56), 120, 120);
+            dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xFF, 0xF1, 0xEA)), null, new Point(width * 0.72, height * 0.56), 34, 34);
+
+            Cloud(dc, 46, 118, 0.8, 0x99);
+            Cloud(dc, 250, 180, 0.55, 0x77);
+            Cloud(dc, 120, 330, 0.45, 0x66);
+
+            Hills(dc, width, height, height * 0.60, 26, 2.1, 0.4, "#FFF0A5BC");
+            Hills(dc, width, height, height * 0.68, 32, 1.6, 1.9, "#FFE48AA6");
+            Hills(dc, width, height, height * 0.77, 28, 2.6, 0.9, "#FFC96F8E");
+            Hills(dc, width, height, height * 0.87, 22, 1.3, 2.7, "#FFA9577A");
+
+            double size = 200;
+            var logo = new Rect((width - size) / 2, height * 0.20, size, size);
+            dc.DrawEllipse(new RadialGradientBrush(Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF), Color.FromArgb(0, 0xFF, 0xFF, 0xFF)),
+                null, new Point(logo.X + size / 2, logo.Y + size / 2), size * 0.62, size * 0.62);
+            dc.DrawImage(kumo, logo);
+        }
+
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        var encoder = new BmpBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(new FormatConvertedBitmap(bitmap, PixelFormats.Bgr24, null, 0)));
+        using var stream = new MemoryStream();
+        encoder.Save(stream);
+        return stream.ToArray();
+    }
+
+    private static LinearGradientBrush Gradient(double height, params (double Offset, string Color)[] stops)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1) };
+        foreach (var (offset, color) in stops)
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(color), offset));
+        return brush;
+    }
+
+    private static void Hills(DrawingContext dc, double width, double height, double baseline, double amplitude, double waves, double phase, string color)
+    {
+        var figure = new PathFigure { StartPoint = new Point(0, height), IsClosed = true };
+        for (int x = 0; x <= width; x += 4)
+        {
+            double t = x / width * Math.PI * waves + phase;
+            figure.Segments.Add(new LineSegment(new Point(x, baseline - amplitude * (Math.Sin(t) * 0.7 + Math.Sin(t * 2.3 + 1) * 0.3)), false));
+        }
+        figure.Segments.Add(new LineSegment(new Point(width, height), false));
+        dc.DrawGeometry(new SolidColorBrush((Color)ColorConverter.ConvertFromString(color)), null, new PathGeometry([figure]));
+    }
+
+    private static void Cloud(DrawingContext dc, double x, double y, double scale, byte alpha)
+    {
+        var brush = new SolidColorBrush(Color.FromArgb(alpha, 0xFF, 0xFF, 0xFF));
+        foreach (var (dx, dy, r) in new[] { (0.0, 0.0, 22.0), (24.0, -10.0, 28.0), (52.0, 0.0, 20.0), (26.0, 8.0, 22.0) })
+            dc.DrawEllipse(brush, null, new Point(x + dx * scale, y + dy * scale), r * scale, r * scale * 0.8);
     }
 
     private static byte[] StateSheet(Dictionary<string, BitmapSource> images)
