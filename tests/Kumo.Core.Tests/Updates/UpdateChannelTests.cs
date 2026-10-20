@@ -245,7 +245,7 @@ public sealed class UpdateChannelTests : IDisposable
         var result = await service.ChannelChangedAsync(CancellationToken.None);
 
         Assert.Equal(UpdateStatus.Disabled, result.Status);
-        Assert.Equal("Updates are managed by Microsoft Store.", result.Message);
+        Assert.Equal("Updates managed by Microsoft Store.", result.Message);
         Assert.Equal(0, source.Calls);
     }
 

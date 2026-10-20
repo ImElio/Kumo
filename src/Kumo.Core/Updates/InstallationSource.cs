@@ -37,11 +37,15 @@ public static class InstallationSource
         }
     }
 
+    /// <summary>
+    /// A package installed outside the Store is neither a Store nor a GitHub installation that Kumo distributes, so it is
+    /// reported as Unknown rather than guessed.
+    /// </summary>
     public static string Describe(InstallationKind kind) => kind switch
     {
         InstallationKind.Store => "Microsoft Store",
-        InstallationKind.SideloadedPackage => "MSIX package (outside the Store)",
-        InstallationKind.Installer => "Kumo installer",
-        _ => "Portable",
+        InstallationKind.Installer => "GitHub",
+        InstallationKind.Portable => "Portable",
+        _ => "Unknown",
     };
 }

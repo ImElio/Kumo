@@ -255,7 +255,7 @@ public sealed class UpdateService
         switch (Capability)
         {
             case UpdateCapability.StoreManaged:
-                return new UpdateCheckResult(UpdateStatus.Disabled, "Updates are managed by Microsoft Store.");
+                return new UpdateCheckResult(UpdateStatus.Disabled, "Updates managed by Microsoft Store.");
             case UpdateCapability.Unconfigured:
                 return new UpdateCheckResult(UpdateStatus.Disabled, "Update checks aren't available in this build.");
         }

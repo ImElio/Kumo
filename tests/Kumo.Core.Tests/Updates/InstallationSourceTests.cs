@@ -19,4 +19,14 @@ public class InstallationSourceTests
     {
         Assert.Equal(expected, InstallationSource.Resolve(packaged, store, marker));
     }
+
+    [Theory]
+    [InlineData(InstallationKind.Store, "Microsoft Store")]
+    [InlineData(InstallationKind.Installer, "GitHub")]
+    [InlineData(InstallationKind.Portable, "Portable")]
+    [InlineData(InstallationKind.SideloadedPackage, "Unknown")]
+    public void Installation_source_is_named_for_people(InstallationKind kind, string expected)
+    {
+        Assert.Equal(expected, InstallationSource.Describe(kind));
+    }
 }

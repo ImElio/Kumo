@@ -59,7 +59,7 @@ public sealed class UpdateServiceTests : IDisposable
 
         Assert.Equal(UpdateCapability.StoreManaged, service.Capability);
         Assert.Equal(UpdateStatus.Disabled, result.Status);
-        Assert.Equal("Updates are managed by Microsoft Store.", result.Message);
+        Assert.Equal("Updates managed by Microsoft Store.", result.Message);
         Assert.Equal(0, source.Calls);
     }
 

@@ -16,8 +16,13 @@ internal sealed record Choice<T>(string Label, T Value)
 
 internal sealed record SettingsResult(KumoSettings Settings, bool StartWithWindows);
 
-/// <param name="Description">Installation source and who manages updates, shown under the version.</param>
-internal sealed record UpdateSummary(string Version, string Description, bool CanCheck, Action CheckNow);
+/// <summary>What the Updates page needs from the application; the page holds no update logic of its own.</summary>
+internal sealed record UpdatePanel(
+    string Version,
+    string InstallationSource,
+    UpdateService Service,
+    Func<UpdateChannel, Task> ChangeChannel,
+    Action<UpdateRelease> ShowRelease);
 
 public partial class SettingsWindow : Window
 {
@@ -25,7 +30,7 @@ public partial class SettingsWindow : Window
     private readonly string _logsDirectory;
     private string _hotkey;
 
-    internal SettingsWindow(KumoSettings settings, bool startWithWindows, string logsDirectory, UpdateSummary updates)
+    internal SettingsWindow(KumoSettings settings, bool startWithWindows, string logsDirectory, UpdatePanel updates)
     {
         InitializeComponent();
         _settings = settings.Clone();
@@ -56,18 +61,95 @@ public partial class SettingsWindow : Window
         SidebarVersion.Text = $"Version {Updates.UpdateCoordinator.DisplayVersion()}";
         Navigation.SelectedIndex = 0;
 
-        Fill(UpdateChannelBox, [new("Stable", UpdateChannel.Stable), new Choice<UpdateChannel>("Beta", UpdateChannel.Beta)], _settings.UpdateChannel);
+        _updates = updates;
+        Fill(UpdateChannelBox,
+            [new("Release — Recommended", UpdateChannel.Release), new("Beta — Early access", UpdateChannel.Beta), new Choice<UpdateChannel>("Development — Experimental", UpdateChannel.Development)],
+            _settings.UpdateChannel);
         AutomaticUpdates.IsChecked = _settings.AutomaticUpdateChecks;
         CurrentVersionText.Text = $"Kumo {updates.Version}";
-        InstallationText.Text = updates.Description;
-        UpdateControls.Visibility = updates.CanCheck ? Visibility.Visible : Visibility.Collapsed;
-        CheckUpdatesButton.Visibility = updates.CanCheck ? Visibility.Visible : Visibility.Collapsed;
-        _checkForUpdates = updates.CheckNow;
+        InstallationText.Text = $"Installation source: {updates.InstallationSource}";
+
+        bool usable = updates.Service.Capability is UpdateCapability.NotifyOnly or UpdateCapability.InstallVerified;
+        UpdateChannelBox.IsEnabled = usable;
+        AutomaticUpdates.IsEnabled = usable;
+        ShowChannel(_settings.UpdateChannel);
+        UpdateChannelBox.SelectionChanged += OnChannelSelected;
+
+        if (!usable)
+            ShowStatus(new UpdateCheckResult(UpdateStatus.Disabled, updates.Service.Capability == UpdateCapability.StoreManaged
+                ? "Updates managed by Microsoft Store."
+                : "Update checks aren't available in this build."));
+        else
+            ShowStatus(updates.Service.Status.Status == UpdateStatus.Idle && updates.Service.LastResult is { } last ? last : updates.Service.Status);
+        updates.Service.StatusChanged += OnStatusChanged;
+        Closed += (_, _) => updates.Service.StatusChanged -= OnStatusChanged;
     }
 
-    private readonly Action _checkForUpdates;
+    private readonly UpdatePanel _updates;
+    private UpdateRelease? _offered;
 
-    private void OnCheckUpdates(object sender, RoutedEventArgs e) => _checkForUpdates();
+    private void OnStatusChanged(UpdateCheckResult status) => Dispatcher.BeginInvoke(() => ShowStatus(status));
+
+    private void ShowStatus(UpdateCheckResult status)
+    {
+        _offered = status.Release;
+        UpdateStatusDetail.Visibility = Visibility.Collapsed;
+        UpdateActionButton.Visibility = Visibility.Visible;
+        UpdateActionButton.IsEnabled = true;
+        switch (status.Status)
+        {
+            case UpdateStatus.Disabled:
+                UpdateStatusText.Text = status.Message;
+                UpdateActionButton.Visibility = Visibility.Collapsed;
+                break;
+            case UpdateStatus.Checking:
+                UpdateStatusText.Text = "Checking for updates…";
+                UpdateActionButton.Content = "Checking…";
+                UpdateActionButton.IsEnabled = false;
+                break;
+            case UpdateStatus.Available:
+                UpdateStatusText.Text = status.Message;
+                UpdateStatusDetail.Text = $"You're using {_updates.Version}.";
+                UpdateStatusDetail.Visibility = Visibility.Visible;
+                UpdateActionButton.Content = "View update";
+                break;
+            case UpdateStatus.UpToDate or UpdateStatus.Failed:
+                UpdateStatusText.Text = status.Message;
+                UpdateActionButton.Content = "Check for updates";
+                break;
+            default:
+                UpdateStatusText.Text = "Kumo hasn't checked for updates yet.";
+                UpdateActionButton.Content = "Check for updates";
+                break;
+        }
+    }
+
+    private void OnUpdateAction(object sender, RoutedEventArgs e)
+    {
+        if (_offered is { } release)
+            _updates.ShowRelease(release);
+        else
+            _ = _updates.Service.CheckAsync(manual: true, CancellationToken.None);
+    }
+
+    private async void OnChannelSelected(object sender, SelectionChangedEventArgs e)
+    {
+        var channel = Selected<UpdateChannel>(UpdateChannelBox);
+        _settings.UpdateChannel = channel;
+        ShowChannel(channel);
+        await _updates.ChangeChannel(channel);
+    }
+
+    private void ShowChannel(UpdateChannel channel)
+    {
+        ChannelDescription.Text = channel switch
+        {
+            UpdateChannel.Beta => "Try upcoming features before they're publicly released. Some issues may occur.",
+            UpdateChannel.Development => "Receive experimental builds intended for developers and testers.",
+            _ => "Receive stable updates recommended for everyone.",
+        };
+        DevelopmentWarning.Visibility = channel == UpdateChannel.Development ? Visibility.Visible : Visibility.Collapsed;
+    }
 
     internal SettingsResult? Result { get; private set; }
 

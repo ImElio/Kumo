@@ -227,35 +227,50 @@
             <Border Style="{StaticResource Card}">
               <DockPanel>
                 <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE946;" />
-                <Button x:Name="CheckUpdatesButton" Style="{StaticResource CardControl}" Content="Check for updates" MinWidth="150" Click="OnCheckUpdates" />
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock x:Name="CurrentVersionText" Style="{StaticResource CardTitle}" />
                   <TextBlock x:Name="InstallationText" Style="{StaticResource CardDescription}" />
                 </StackPanel>
               </DockPanel>
             </Border>
-            <StackPanel x:Name="UpdateControls">
-              <Border Style="{StaticResource Card}">
+            <Border Style="{StaticResource Card}">
+              <DockPanel>
+                <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE895;" />
+                <Button x:Name="UpdateActionButton" Style="{StaticResource CardControl}" MinWidth="150" Click="OnUpdateAction" />
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock x:Name="UpdateStatusText" Style="{StaticResource CardTitle}" AutomationProperties.LiveSetting="Polite" />
+                  <TextBlock x:Name="UpdateStatusDetail" Style="{StaticResource CardDescription}" />
+                </StackPanel>
+              </DockPanel>
+            </Border>
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
                 <DockPanel>
                   <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE8AB;" />
-                  <ComboBox x:Name="UpdateChannelBox" Style="{StaticResource CardControl}" MinWidth="200" AutomationProperties.Name="Update channel" />
+                  <ComboBox x:Name="UpdateChannelBox" Style="{StaticResource CardControl}" MinWidth="240" AutomationProperties.Name="Update channel" />
                   <StackPanel VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource CardTitle}" Text="Update channel" />
-                    <TextBlock Style="{StaticResource CardDescription}" Text="Beta adds release candidates and betas before they become stable." />
+                    <TextBlock x:Name="ChannelDescription" Style="{StaticResource CardDescription}" />
                   </StackPanel>
                 </DockPanel>
-              </Border>
-              <Border Style="{StaticResource Card}">
-                <DockPanel>
-                  <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE823;" />
-                  <CheckBox x:Name="AutomaticUpdates" Style="{StaticResource CardControl}" AutomationProperties.Name="Check for updates automatically" />
-                  <StackPanel VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource CardTitle}" Text="Check for updates automatically" />
-                    <TextBlock Style="{StaticResource CardDescription}" Text="At most once a day, from GitHub Releases. Nothing about you or your files is sent." />
-                  </StackPanel>
+                <DockPanel x:Name="DevelopmentWarning" Margin="36,10,0,0" Visibility="Collapsed">
+                  <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource KumoGlyphs}" Text="&#xE7BA;" FontSize="14" Margin="0,1,8,0"
+                             Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                  <TextBlock Style="{StaticResource CardDescription}" Margin="0"
+                             Text="Experimental builds may be unstable. Development builds aren't published yet, so this channel currently offers alpha, beta and release candidate versions." />
                 </DockPanel>
-              </Border>
-            </StackPanel>
+              </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}">
+              <DockPanel>
+                <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE823;" />
+                <CheckBox x:Name="AutomaticUpdates" Style="{StaticResource CardControl}" AutomationProperties.Name="Automatically check for updates" />
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Style="{StaticResource CardTitle}" Text="Automatically check for updates" />
+                  <TextBlock Style="{StaticResource CardDescription}" Text="Check for new versions automatically." />
+                </StackPanel>
+              </DockPanel>
+            </Border>
           </StackPanel>
 
           <StackPanel x:Name="AdvancedPage" Visibility="Collapsed">

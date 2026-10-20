@@ -20,7 +20,7 @@ internal sealed class UpdateCoordinator : IDisposable
     private readonly Lazy<HttpClient> _http;
     private readonly string _downloads;
 
-    public UpdateCoordinator(Log log, string appDataRoot, Func<UpdateChannel> channel)
+    public UpdateCoordinator(Log log, string appDataRoot, Func<UpdateChannel> channel, Func<bool> automaticChecks)
     {
         _log = log;
         _downloads = Path.Combine(appDataRoot, "updates");
@@ -29,7 +29,8 @@ internal sealed class UpdateCoordinator : IDisposable
         IUpdateSource? source = Environment.Repository is { } repository && Environment.Installation != InstallationKind.Store
             ? new LazySource(() => new GitHubReleaseSource(_http.Value, repository, Environment.CurrentVersion.ToString()))
             : null;
-        Service = new UpdateService(Environment, source, new UpdateStateStore(Path.Combine(appDataRoot, "updates.json"), log), channel, log);
+        Service = new UpdateService(Environment, source, new UpdateStateStore(Path.Combine(appDataRoot, "updates.json"), log), channel, log,
+            automaticChecks: automaticChecks);
     }
 
     public UpdateEnvironment Environment { get; }

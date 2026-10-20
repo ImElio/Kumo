@@ -74,7 +74,7 @@ internal sealed class KumoApplication : Application
         };
 
         _log.MinimumLevel = _settings.DiagnosticLogging ? LogLevel.Debug : LogLevel.Info;
-        _updates = new UpdateCoordinator(_log, AppPaths.Root, () => _settings.UpdateChannel);
+        _updates = new UpdateCoordinator(_log, AppPaths.Root, () => _settings.UpdateChannel, () => _settings.AutomaticUpdateChecks);
         _updates.CleanUpDownloads();
         _log.Info("Kumo started", ("version", _updates.Environment.CurrentVersion.ToString()), ("pid", Environment.ProcessId),
             ("installation", _updates.Environment.Installation.ToString()), ("updates", _updates.Service.Capability.ToString()));
@@ -165,19 +165,18 @@ internal sealed class KumoApplication : Application
         Shutdown();
     }
 
-    private UpdateSummary DescribeUpdates()
+    private UpdatePanel DescribeUpdates() =>
+        new(UpdateCoordinator.DisplayVersion(), InstallationSource.Describe(_updates!.Environment.Installation), _updates.Service,
+            ChangeUpdateChannelAsync, release => ShowUpdates(release));
+
+    /// <summary>Saves the channel at once and re-checks for it; an offer is only shown, never downloaded or installed.</summary>
+    private async Task ChangeUpdateChannelAsync(UpdateChannel channel)
     {
-        var environment = _updates!.Environment;
-        string source = InstallationSource.Describe(environment.Installation);
-        string description = _updates.Service.Capability switch
-        {
-            UpdateCapability.StoreManaged => "Updates managed by Microsoft Store.",
-            UpdateCapability.Unconfigured => $"{source} · update checks aren't available in this build.",
-            UpdateCapability.InstallVerified => $"{source} · updates are downloaded, verified and installed by Kumo.",
-            _ when environment.Installation == InstallationKind.Portable => $"{source} · new versions are announced; replace the folder to update.",
-            _ => $"{source} · new versions are announced and open the download page.",
-        };
-        return new UpdateSummary(UpdateCoordinator.DisplayVersion(), description, UpdatesUsable, () => ShowUpdates());
+        if (_settings.UpdateChannel == channel || _updates == null)
+            return;
+        _settings.UpdateChannel = channel;
+        SaveSettings();
+        await _updates.Service.ChannelChangedAsync(CancellationToken.None);
     }
 
     internal void ShowUpdates(UpdateRelease? release = null)
