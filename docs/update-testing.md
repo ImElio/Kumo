@@ -11,9 +11,8 @@ procedure proves the pieces work together against GitHub.
 
 - The test repository, initialised with a README so `gh` has a branch to tag, with no rules or environments.
 - NSIS installed locally and the `gh` CLI signed in to the account that owns the test repository.
-- For the install path: a code-signing certificate trusted by the test PC and its exact subject. Without one, only
-  the notify path (steps 1–4) can be tested; Kumo will refuse to run the downloaded installer, which is the expected
-  result.
+- Optional: a code-signing certificate trusted by the test PC and its exact subject, to test the signature check as
+  well. Without one, installed copies update after the SHA-256 and version checks only.
 
 ## 1. Build version A (installed)
 
@@ -55,7 +54,7 @@ draft `windows/v0.2.0`.
 | Switch back to Release | Offers `0.1.1` again, never a lower version |
 | Kumo log (`%LOCALAPPDATA%\Kumo\logs`) | No request to any repository other than the test one |
 
-## 5. Install path (signed builds only)
+## 5. Install path
 
 Click **Get update**. Expected: download progress, SHA-256 and version checked (and the signature, if a publisher is
 configured), the installer runs silently without an elevation prompt, and Kumo restarts as `0.1.1`. Then:
