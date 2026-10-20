@@ -28,7 +28,7 @@ export default function ThemeToggle() {
   const dark = theme === "dark";
   return (
     <button type="button" className="theme-toggle" onClick={toggle} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Light mode" : "Dark mode"}>
-      <Doodle name={dark ? "sun" : "moon"} size={20} accent={false} />
+      <Doodle name={dark ? "sun" : "moon"} size={24} />
     </button>
   );
 }

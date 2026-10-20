@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { links } from "@/lib/site";
+import Doodle from "./Doodle";
 import ThemeToggle from "./ThemeToggle";
 
 export default function SiteHeader() {
@@ -7,8 +8,7 @@ export default function SiteHeader() {
     <header className="site-header">
       <div className="wrap header-inner">
         <Link className="brand" href="/" aria-label="Kumo, home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/kumo-64.png" width={32} height={32} alt="" />
+          <Doodle name="cloud" size={38} accent={false} />
           <span>Kumo</span>
         </Link>
         <nav aria-label="Main">

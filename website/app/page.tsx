@@ -1,7 +1,6 @@
 import Landscape from "@/components/Landscape";
 import DesktopDemo from "@/components/DesktopDemo";
 import Doodle from "@/components/Doodle";
-import PlatformStatus from "@/components/PlatformStatus";
 import { links, site } from "@/lib/site";
 
 export default function Home() {
@@ -10,7 +9,6 @@ export default function Home() {
       <div className="sky">
         <section className="hero wrap" aria-labelledby="hero-title">
           <div className="hero-text">
-            <p className="eyebrow">A small utility for Windows</p>
             <h1 id="hero-title">
               Your files.
               <br />A little <span className="scribble">easier</span>.
@@ -29,7 +27,6 @@ export default function Home() {
                 View on GitHub
               </a>
             </div>
-            <PlatformStatus />
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="hero-mascot" src="/assets/kumo.webp" width={240} height={211} alt="Kumo, a small cloud wearing an orange scarf" />
@@ -89,57 +86,62 @@ export default function Home() {
       <section className="features wrap" id="features" aria-labelledby="features-title">
         <h2 id="features-title">What it does in {site.version}</h2>
 
-        <div className="feature-groups">
-          <div className="feature-group">
+        <div className="feature-row">
+          <div className="feature-text">
             <h3>Images</h3>
             <dl>
-              <dt>
-                <Doodle name="convert" />
-                Convert
-              </dt>
+              <dt>Convert</dt>
               <dd>PNG, JPEG, WebP, BMP and GIF to PNG, JPEG, WebP, BMP or PDF.</dd>
-              <dt>
-                <Doodle name="crop" />
-                Crop
-              </dt>
+              <dt>Crop</dt>
               <dd>In a preview editor with handles, guides and ratios such as 1:1, 4:3 and 16:9.</dd>
-              <dt>
-                <Doodle name="rotate" />
-                Rotate
-              </dt>
+              <dt>Rotate</dt>
               <dd>90° either way, or 180°, without opening an editor.</dd>
-              <dt>
-                <Doodle name="compress" />
-                Compress
-              </dt>
+              <dt>Compress</dt>
               <dd>Smaller JPEG and WebP files; PNG compression is lossless.</dd>
             </dl>
           </div>
-          <div className="feature-group">
+          <figure className="shot">
+            <div className="shot-frame">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/shot-convert.webp"
+                width={344}
+                height={456}
+                loading="lazy"
+                alt="Kumo's Convert submenu for one JPEG image, offering PNG, WEBP, BMP and PDF, with WEBP highlighted"
+              />
+            </div>
+            <figcaption>Convert, opened for one photo.</figcaption>
+          </figure>
+        </div>
+
+        <div className="feature-row feature-row-flip">
+          <div className="feature-text">
             <h3>PDFs</h3>
             <dl>
-              <dt>
-                <Doodle name="merge" />
-                Merge
-              </dt>
+              <dt>Merge</dt>
               <dd>Combine several PDFs, or several images, into one document.</dd>
-              <dt>
-                <Doodle name="split" />
-                Split
-              </dt>
+              <dt>Split</dt>
               <dd>One file per page, or only the pages you choose.</dd>
-              <dt>
-                <Doodle name="protect" />
-                Protect
-              </dt>
+              <dt>Protect</dt>
               <dd>Save a password-protected copy.</dd>
-              <dt>
-                <Doodle name="images" />
-                To images
-              </dt>
+              <dt>To images</dt>
               <dd>Turn pages into PNG or JPEG.</dd>
             </dl>
           </div>
+          <figure className="shot">
+            <div className="shot-frame">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/shot-pdfs.webp"
+                width={344}
+                height={456}
+                loading="lazy"
+                alt="Kumo's menu for two PDFs, with Convert, Merge PDFs, Split, Extract and Protect"
+              />
+            </div>
+            <figcaption>The menu for two PDFs.</figcaption>
+          </figure>
         </div>
 
         <figure className="feature-shot">

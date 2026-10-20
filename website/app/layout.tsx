@@ -1,13 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { config } from "@fortawesome/fontawesome-svg-core";
-import "@fortawesome/fontawesome-svg-core/styles.css";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { site } from "@/lib/site";
 import "./globals.css";
-
-// Font Awesome's CSS is bundled above, so icons have their size on the first paint instead of after it is injected.
-config.autoAddCss = false;
 
 const description = "Kumo is a free, open-source Windows utility. Drag files, tap Shift, and convert, crop, compress or combine them from a radial menu.";
 
