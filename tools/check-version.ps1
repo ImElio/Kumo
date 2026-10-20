@@ -2,7 +2,7 @@
 .SYNOPSIS
   Validates that every place carrying Kumo's version agrees with Directory.Build.props.
 .PARAMETER Tag
-  Optional release tag (for example v0.2.0-beta.1) that must match the version exactly.
+  Optional Windows release tag (for example windows/v0.2.0-beta.1) that must match the version exactly.
 #>
 param([string]$Tag = "")
 
@@ -25,7 +25,7 @@ if ($prerelease -and ($prerelease.Split('.')[0] -notin @("beta", "rc", "alpha", 
 }
 
 if ($Tag) {
-  if ($Tag -ne "v$version") { throw "Tag '$Tag' does not match the project version 'v$version'." }
+  if ($Tag -ne "windows/v$version") { throw "Tag '$Tag' does not match the Windows version 'windows/v$version'." }
   if ($prerelease -and $prerelease.Split('.')[0] -eq "dev") { throw "Development versions are never released; use beta or rc." }
 }
 

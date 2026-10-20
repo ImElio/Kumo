@@ -1,9 +1,10 @@
-name: Release
+name: Release Windows
 
-# Triggered only by a version tag pushed by a maintainer (v0.2.0, v0.2.0-beta.1, ...). Nothing here creates tags.
+# Triggered only by a Windows version tag pushed by a maintainer (windows/v0.2.0, windows/v0.2.0-beta.1, ...).
+# Nothing here creates tags.
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+    tags: ["windows/v[0-9]+.[0-9]+.[0-9]+*"]
 
 permissions: {}
 
@@ -20,10 +21,12 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
+      previous: ${{ steps.previous.outputs.tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -33,6 +36,19 @@ jobs:
         id: version
         shell: pwsh
         run: ./tools/check-version.ps1 -Tag "${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      # Generated notes must start from the previous Windows release, not from whichever platform tagged last.
+      - name: Find previous Windows release
+        id: previous
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $current = [semver]$env:VERSION
+          $previous = git tag --list "windows/v*" |
+            ForEach-Object { $v = $null; if ([semver]::TryParse($_.Substring(9), [ref]$v) -and $v -lt $current) { [pscustomobject]@{ Tag = $_; Version = $v } } } |
+            Sort-Object Version -Descending | Select-Object -First 1
+          "tag=$($previous.Tag)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Install NSIS
         shell: pwsh
@@ -94,7 +110,11 @@ jobs:
           TAG: ${{ github.ref_name }}
           VERSION: ${{ needs.build.outputs.version }}
           PRERELEASE: ${{ needs.build.outputs.prerelease }}
+          PREVIOUS: ${{ needs.build.outputs.previous }}
+        # Several platforms share this repository, so no release is marked as GitHub's "latest"; Kumo selects updates
+        # from its own platform's tags and never reads that flag.
         run: |
-          flags=(--draft --verify-tag --generate-notes --title "Kumo $VERSION")
+          flags=(--draft --verify-tag --generate-notes --latest=false --title "Kumo for Windows $VERSION")
           if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          if [ -n "$PREVIOUS" ]; then flags+=(--notes-start-tag "$PREVIOUS"); fi
           gh release create "$TAG" "${flags[@]}" release/*
