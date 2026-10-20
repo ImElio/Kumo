@@ -49,7 +49,7 @@ foreach ($runtime in $Runtimes) {
   if (Test-Path $publish) { Remove-Item $publish -Recurse -Force }
   $arguments = @(
     "publish", (Join-Path $root "src/Kumo.App/Kumo.App.csproj"),
-    "-c", "Release", "-r", $runtime, "--self-contained", "false",
+    "-c", "Release", "-r", $runtime, "--self-contained", "true",
     "-o", $publish,
     "-p:KumoUpdateRepository=$Repository",
     "-p:KumoUpdatePublisher=$Publisher",

@@ -35,7 +35,6 @@ SetCompressor /SOLID lzma
 
 !define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Kumo"
 !define RUN_KEY "Software\Microsoft\Windows\CurrentVersion\Run"
-!define RUNTIME_URL "https://dotnet.microsoft.com/download/dotnet/10.0"
 
 !ifdef SIGN_COMMAND
   !finalize '${SIGN_COMMAND}'
@@ -100,7 +99,6 @@ Function .onInit
     ${EndIf}
   !endif
   Call RequireValidInstallDir
-  Call CheckRuntime
 FunctionEnd
 
 ; Kumo's updater runs the installer with /S /relaunch after closing itself, so the new version starts on its own.
@@ -158,17 +156,6 @@ Function .onInstFailed
   SetOutPath "$TEMP"
   RMDir /r "$INSTDIR"
   Rename "$INSTDIR.previous" "$INSTDIR"
-FunctionEnd
-
-Function CheckRuntime
-  ; Framework-dependent build: the .NET 10 Desktop Runtime must be installed. x64 runtimes live in dotnet\x64 on Arm PCs.
-  IfFileExists "$PROGRAMFILES64\dotnet\shared\Microsoft.WindowsDesktop.App\10.*" found
-  !if ${ARCH} == "x64"
-    IfFileExists "$PROGRAMFILES64\dotnet\x64\shared\Microsoft.WindowsDesktop.App\10.*" found
-  !endif
-  MessageBox MB_YESNO|MB_ICONINFORMATION "Kumo needs the .NET 10 Desktop Runtime, which isn't installed yet.$\r$\n$\r$\nOpen the download page now? Kumo will still be installed." /SD IDNO IDNO found
-  ExecShell "open" "${RUNTIME_URL}"
-  found:
 FunctionEnd
 
 ; Asks a running Kumo to quit, then waits until its executable is no longer in use.
