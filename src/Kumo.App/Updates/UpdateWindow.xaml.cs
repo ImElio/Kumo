@@ -7,7 +7,10 @@ using Kumo.Core.Updates;
 
 namespace Kumo.App.Updates;
 
-/// <summary>The one small window for everything update-related: checking, offering, downloading and handing over.</summary>
+/// <summary>
+/// The window for everything update-related: checking, offering, downloading and handing over. When a release is
+/// offered it grows into a resizable What's new window with the full changelog and its screenshots.
+/// </summary>
 public partial class UpdateWindow : Window
 {
     private readonly UpdateCoordinator _updates;
@@ -27,6 +30,7 @@ public partial class UpdateWindow : Window
     /// <summary>Runs a manual check and shows its outcome.</summary>
     internal async Task CheckAsync()
     {
+        NotesCard.Visibility = Visibility.Collapsed;
         ShowState(MascotState.Processing, "Checking for updates…", string.Empty);
         var result = await _updates.Service.CheckAsync(manual: true, CancellationToken.None);
         if (result.Status == UpdateStatus.Available && result.Release is { } release)
@@ -45,24 +49,27 @@ public partial class UpdateWindow : Window
             actions.Add(Button("Update", async () => await DownloadAsync(release), primary: true));
         else
             actions.Add(Button("Download", () => Open(release.PageUrl), primary: true));
-        actions.Insert(0, Button("What's new", () => Open(release.PageUrl)));
+        actions.Insert(0, Button("View on GitHub", () => Open(release.PageUrl)));
         actions.Insert(0, Button("Later", () =>
         {
             _updates.Service.RemindLater(release.Version);
             Close();
         }));
 
-        ShowState(MascotState.Hovering, $"Kumo {version} is available",
-            $"You're currently using {_updates.Environment.CurrentVersion.ToShortString()}." + (release.Version.IsPrerelease ? " This is a beta release." : string.Empty),
+        string published = release.PublishedAt is { } date
+            ? string.Create(CultureInfo.GetCultureInfo("en-US"), $"Published {date.LocalDateTime:MMMM d, yyyy} · ")
+            : string.Empty;
+        ShowState(MascotState.Hovering, $"What's new in Kumo {version}",
+            published + $"You're using {_updates.Environment.CurrentVersion.ToShortString()}." + (release.Version.IsPrerelease ? " This is a beta release." : string.Empty),
             [.. actions]);
         Notes.Content = ReleaseNotesView.Build(release.Notes);
         NotesCard.Visibility = Visibility.Visible;
+        ExpandForNotes();
     }
 
     private async Task DownloadAsync(UpdateRelease release)
     {
         _download = new CancellationTokenSource();
-        NotesCard.Visibility = Visibility.Collapsed;
         ProgressPanel.Visibility = Visibility.Visible;
         Progress.Value = 0;
         ProgressText.Text = string.Empty;
@@ -131,7 +138,6 @@ public partial class UpdateWindow : Window
         Headline.Text = headline;
         Detail.Text = detail;
         Detail.Visibility = detail.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
-        NotesCard.Visibility = Visibility.Collapsed;
         Actions.Children.Clear();
         foreach (var action in actions)
             Actions.Children.Add(action);
@@ -150,6 +156,23 @@ public partial class UpdateWindow : Window
     {
         if (page.Scheme == Uri.UriSchemeHttps && page.Host == "github.com")
             Process.Start(new ProcessStartInfo(page.AbsoluteUri) { UseShellExecute = true });
+    }
+
+    /// <summary>Turns the compact status window into a resizable reading window sized to the screen it is on.</summary>
+    private void ExpandForNotes()
+    {
+        if (SizeToContent == SizeToContent.Manual)
+            return;
+        var work = SystemParameters.WorkArea;
+        SizeToContent = SizeToContent.Manual;
+        ResizeMode = ResizeMode.CanResize;
+        Chrome.ResizeBorderThickness = new Thickness(6);
+        MinWidth = 520;
+        MinHeight = 420;
+        Width = Math.Min(780, work.Width - 80);
+        Height = Math.Min(820, work.Height - 80);
+        Left = work.Left + (work.Width - Width) / 2;
+        Top = work.Top + (work.Height - Height) / 2;
     }
 
     private void OnClose(object sender, RoutedEventArgs e) => Close();

@@ -238,6 +238,6 @@ public static partial class ReleaseNotes
     [GeneratedRegex(@"^https://github\.com/[^/]+/[^/]+/pull/(\d+)/?$")]
     private static partial Regex PullRequest();
 
-    [GeneratedRegex(@"^https://github\.com/[^/]+/[^/]+/compare/([^/\s]+)$")]
+    [GeneratedRegex(@"^https://github\.com/[^/]+/[^/]+/compare/(\S+\.\.\.\S+)$")]
     private static partial Regex Compare();
 }

@@ -149,4 +149,13 @@ public class ReleaseNotesTests
     {
         Assert.Equal(allowed, ReleaseNotes.IsAllowedImage(new Uri(url)));
     }
+
+    [Fact]
+    public void Compare_links_between_platform_tags_are_shortened()
+    {
+        var link = ReleaseNotes.ParseInlines("https://github.com/ImElio/Kumo/compare/windows/v0.1.0...windows/v0.2.0").Single();
+
+        Assert.Equal("windows/v0.1.0...windows/v0.2.0", link.Text);
+        Assert.Equal("https://github.com/ImElio/Kumo/compare/windows/v0.1.0...windows/v0.2.0", link.Url!.AbsoluteUri);
+    }
 }

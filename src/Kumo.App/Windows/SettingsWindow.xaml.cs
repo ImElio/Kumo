@@ -139,19 +139,12 @@ public partial class SettingsWindow : Window
         WhatsNewTitle.Text = $"What's new in Kumo {release.Version.ToShortString()}";
         WhatsNewDate.Text = (release.PublishedAt is { } published ? string.Create(System.Globalization.CultureInfo.GetCultureInfo("en-US"), $"Published {published.LocalDateTime:MMMM d, yyyy}") : "Published on GitHub")
             + (release.Version.IsPrerelease ? " · pre-release" : string.Empty);
-        WhatsNewNotes.Content = Updates.ReleaseNotesView.Build(release.Notes);
     }
 
-    private void OnGetUpdate(object sender, RoutedEventArgs e)
+    private void OnSeeWhatsNew(object sender, RoutedEventArgs e)
     {
         if (_offered is { } release)
             _updates.ShowRelease(release);
-    }
-
-    private void OnViewOnGitHub(object sender, RoutedEventArgs e)
-    {
-        if (_offered is { PageUrl: { Scheme: "https", Host: "github.com" } page })
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(page.AbsoluteUri) { UseShellExecute = true });
     }
 
     private void OnUpdateAction(object sender, RoutedEventArgs e)

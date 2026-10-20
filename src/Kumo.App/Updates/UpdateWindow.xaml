@@ -11,7 +11,7 @@
         ShowInTaskbar="True"
         WindowStartupLocation="CenterScreen">
   <shell:WindowChrome.WindowChrome>
-    <shell:WindowChrome CaptionHeight="40" ResizeBorderThickness="0" GlassFrameThickness="0" UseAeroCaptionButtons="False" />
+    <shell:WindowChrome x:Name="Chrome" CaptionHeight="40" ResizeBorderThickness="0" GlassFrameThickness="0" UseAeroCaptionButtons="False" />
   </shell:WindowChrome.WindowChrome>
   <Window.Resources>
     <ResourceDictionary Source="../Windows/KumoStyles.xaml" />
@@ -21,14 +21,14 @@
     <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="40" />
-        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
       </Grid.RowDefinitions>
       <TextBlock Text="Kumo updates" FontSize="12" Margin="16,0,0,0" VerticalAlignment="Center" />
       <Button Style="{StaticResource CloseCaptionButton}" Content="&#xE8BB;" HorizontalAlignment="Right" VerticalAlignment="Top"
               Click="OnClose" AutomationProperties.Name="Close" />
 
-      <StackPanel Grid.Row="1" Margin="28,4,28,24">
-        <DockPanel>
+      <DockPanel Grid.Row="1" Margin="28,4,28,24" LastChildFill="True">
+        <DockPanel DockPanel.Dock="Top">
           <mascot:KumoMascot x:Name="Mascot" Width="64" Height="64" DockPanel.Dock="Left" Margin="0,0,16,0" />
           <StackPanel VerticalAlignment="Center">
             <TextBlock x:Name="Headline" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"
@@ -37,19 +37,20 @@
           </StackPanel>
         </DockPanel>
 
-        <Border x:Name="NotesCard" Style="{StaticResource Card}" Margin="0,16,0,0" MinHeight="0" Visibility="Collapsed">
-          <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
-            <ContentControl x:Name="Notes" Focusable="False" />
-          </ScrollViewer>
-        </Border>
+        <StackPanel x:Name="Actions" DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0" />
 
-        <StackPanel x:Name="ProgressPanel" Margin="0,16,0,0" Visibility="Collapsed">
+        <StackPanel x:Name="ProgressPanel" DockPanel.Dock="Bottom" Margin="0,16,0,0" Visibility="Collapsed">
           <ProgressBar x:Name="Progress" Height="4" Maximum="1" AutomationProperties.Name="Download progress" />
           <TextBlock x:Name="ProgressText" FontSize="12" Margin="0,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
         </StackPanel>
 
-        <StackPanel x:Name="Actions" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0" />
-      </StackPanel>
+        <Border x:Name="NotesCard" Margin="0,16,0,0" Padding="0" CornerRadius="8" BorderThickness="1" Visibility="Collapsed"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+          <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="22,18,22,18">
+            <ContentControl x:Name="Notes" Focusable="False" />
+          </ScrollViewer>
+        </Border>
+      </DockPanel>
     </Grid>
   </Border>
 </Window>
