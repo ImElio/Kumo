@@ -11,7 +11,9 @@
 
 ## Measurements
 
-Release build, framework-dependent, `win-x64`, Windows 11 (build 26200), measured on 2026-10-19. Private working
+Release build, framework-dependent, `win-x64`, Windows 11 (build 26200), measured on 2026-10-19. Release builds are
+self-contained since 2026-10-20; a self-contained installed copy measured the same idle private memory (39.4 MB
+against 39.2 MB). Private working
 set comes from `Win32_PerfFormattedData_PerfProc_Process.WorkingSetPrivate`; private bytes from
 `Process.PrivateMemorySize64`; CPU from `Process.TotalProcessorTime`. Menus were opened through the single-instance
 hand-over and driven with UI Automation, which itself makes the target process allocate automation peers, so the

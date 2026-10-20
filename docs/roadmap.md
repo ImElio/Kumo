@@ -7,11 +7,11 @@
 2. **Investigate the one unaccepted drop** seen by the drag probe (first drag after a Release start-up). Detailed
    logging now records drag entry and rejected drops.
 3. **Packaging.** Recommended order:
-   - A portable ZIP (framework-dependent, about 38 MB) for early testers.
+   - A self-contained portable ZIP (about 69 MB) for early testers.
    - The per-user NSIS installer is built; it needs code signing (next item) before Kumo can update through it.
    - MSIX later. It would need the `windows.startupTask` extension instead of the `Run` key and a Store-signed
      identity; low-level hooks and drag-and-drop work in full-trust MSIX apps.
-   - Self-contained publishing removes the runtime prerequisite at roughly +70 MB.
+   - Releases are self-contained, so no runtime has to be installed; the installer is about 50 MB.
 4. **Code signing** for the executable and installer, to avoid SmartScreen warnings and to enable verified
    self-updates (see [updater.md](updater.md)).
 5. **Mascot artwork as true vectors.** The current artwork is raster images wrapped in SVG; real vector files would

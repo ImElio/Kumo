@@ -15,7 +15,7 @@ the only network request is an optional, at most daily check of the project's Gi
 ## Requirements
 
 - Windows 10 version 2004 (build 19041) or later, x64. So far developed and tested on Windows 11 (build 26200).
-- [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) for framework-dependent builds.
+- Nothing else: release builds include the .NET 10 runtime. Building from source needs the .NET 10 SDK.
 - No administrator rights.
 
 ## Using Kumo
@@ -112,10 +112,10 @@ dotnet test Kumo.slnx
 dotnet run --project src/Kumo.App
 ```
 
-Release output (framework-dependent, about 38 MB):
+Release output (self-contained, about 170 MB; `tools/package-release.ps1` builds the ZIP and installer from it):
 
 ```powershell
-dotnet publish src/Kumo.App -c Release -r win-x64 --self-contained false -o artifacts/publish
+dotnet publish src/Kumo.App -c Release -r win-x64 --self-contained true -o artifacts/publish
 ```
 
 Release packages (portable ZIPs, NSIS installers and `SHA256SUMS.txt` for x64 and Arm64; the installers need

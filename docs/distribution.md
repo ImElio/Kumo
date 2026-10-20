@@ -7,8 +7,8 @@ Kumo is planned for two channels: **GitHub Releases** (portable ZIP today, a per
 
 ### Portable ZIP (available now)
 
-Produced by `tools/package-release.ps1` for `win-x64` and `win-arm64`. Framework-dependent: the
-[.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) must be installed.
+Produced by `tools/package-release.ps1` for `win-x64` and `win-arm64`. Self-contained: the .NET 10 runtime ships with
+Kumo, so nothing else has to be installed. About 69 MB zipped and 170 MB unpacked for x64; the installer is about 50 MB.
 
 Upgrading a portable copy:
 
@@ -29,7 +29,6 @@ Upgrading a portable copy:
 | Scope | Per user, no administrator rights (`RequestExecutionLevel user`), default `%LOCALAPPDATA%\Programs\Kumo`. |
 | Folder guard | The install folder must be named `Kumo` and be new, empty or already contain Kumo. It is checked on the directory page, in `.onInit` and at install time (silent installs skip the page), so the uninstaller can never delete an unrelated folder. |
 | Architecture | The Arm64 installer refuses non-Arm PCs; the x64 installer runs on x64 and on Arm (emulated). |
-| Runtime | Looks for the .NET 10 Desktop Runtime and offers its download page if missing; installation continues either way. |
 | Running Kumo | Runs `Kumo.exe --exit`, waits up to 10 s for the executable to be released, then asks; silent installs give up (exit code 2) without changing anything. |
 | Upgrade safety | The existing folder is renamed to `Kumo.previous` before the new files are copied and restored if copying fails or is cancelled (`.onInstFailed`); it is removed only after success. |
 | Updater marker | Writes `Kumo.installation.json` (`{"kind":"installer","version":"…"}`), which tells Kumo it may update itself through the installer. |

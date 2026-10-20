@@ -18,7 +18,8 @@ licensing decision.
 The installers are built with [NSIS](https://nsis.sourceforge.io) (zlib/libpng license); the installer stub it
 embeds carries no attribution requirement.
 
-The .NET runtime and WPF are provided by Microsoft under the MIT License and are not redistributed by
-framework-dependent builds.
+Release builds are self-contained and redistribute the .NET runtime and WPF, provided by Microsoft under the MIT
+License ([license](https://github.com/dotnet/runtime/blob/main/LICENSE.TXT),
+[third-party notices](https://github.com/dotnet/runtime/blob/main/THIRD-PARTY-NOTICES.TXT)).
 
 The Kumo mascot and icon are original artwork created for this project and are covered by Kumo's license.
