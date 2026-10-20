@@ -9,7 +9,8 @@ internal static class UpdateFixtures
 {
     public static readonly RepositoryIdentity Repository = new("kumo-test", "kumo");
 
-    public static UpdateRelease Release(string version, bool? prerelease = null, bool draft = false, bool portable = true, bool installer = true, Architecture architecture = Architecture.X64)
+    public static UpdateRelease Release(string version, bool? prerelease = null, bool draft = false, bool portable = true, bool installer = true, Architecture architecture = Architecture.X64,
+        ReleasePlatform platform = ReleasePlatform.Windows)
     {
         var parsed = SemVersion.Parse(version);
         var assets = new List<ReleaseAsset>();
@@ -18,8 +19,9 @@ internal static class UpdateFixtures
         if (installer)
             assets.Add(Asset(ReleaseAssets.InstallerName(parsed, architecture)));
         assets.Add(Asset(ReleaseAssets.Checksums));
-        return new UpdateRelease(parsed, "v" + version, "Kumo " + version, "Notes for " + version,
-            new Uri($"https://github.com/kumo-test/kumo/releases/tag/v{version}"), DateTimeOffset.UnixEpoch, draft, prerelease ?? parsed.IsPrerelease, assets);
+        string tag = ReleaseTag.Format(platform, parsed);
+        return new UpdateRelease(platform, parsed, tag, "Kumo " + version, "Notes for " + version,
+            new Uri($"https://github.com/kumo-test/kumo/releases/tag/{tag}"), DateTimeOffset.UnixEpoch, draft, prerelease ?? parsed.IsPrerelease, assets);
     }
 
     public static ReleaseAsset Asset(string name, long size = 1000) =>

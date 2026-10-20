@@ -8,7 +8,7 @@ public class ReleaseSelectorTests
     private static readonly SemVersion Current = SemVersion.Parse("0.1.2");
 
     private static UpdateRelease? Select(UpdateChannel channel, params UpdateRelease[] releases) =>
-        ReleaseSelector.SelectUpdate(releases, Current, channel, InstallationKind.Portable, Architecture.X64);
+        ReleaseSelector.SelectUpdate(releases, ReleasePlatform.Windows, Current, channel, InstallationKind.Portable, Architecture.X64);
 
     [Fact]
     public void Release_channel_ignores_prereleases()
@@ -64,7 +64,7 @@ public class ReleaseSelectorTests
     public void A_beta_user_on_a_prerelease_is_not_downgraded_to_an_older_stable()
     {
         var current = SemVersion.Parse("0.3.0-beta.2");
-        var update = ReleaseSelector.SelectUpdate([Release("0.2.5"), Release("0.3.0-beta.1")], current, UpdateChannel.Release, InstallationKind.Portable, Architecture.X64);
+        var update = ReleaseSelector.SelectUpdate([Release("0.2.5"), Release("0.3.0-beta.1")], ReleasePlatform.Windows, current, UpdateChannel.Release, InstallationKind.Portable, Architecture.X64);
         Assert.Null(update);
     }
 
@@ -78,14 +78,14 @@ public class ReleaseSelectorTests
     [Fact]
     public void Releases_without_an_asset_for_this_architecture_are_skipped()
     {
-        var update = ReleaseSelector.SelectUpdate([Release("0.3.0", architecture: Architecture.X64)], Current, UpdateChannel.Release, InstallationKind.Portable, Architecture.Arm64);
+        var update = ReleaseSelector.SelectUpdate([Release("0.3.0", architecture: Architecture.X64)], ReleasePlatform.Windows, Current, UpdateChannel.Release, InstallationKind.Portable, Architecture.Arm64);
         Assert.Null(update);
     }
 
     [Fact]
     public void Installer_installations_need_the_installer_asset()
     {
-        var update = ReleaseSelector.SelectUpdate([Release("0.3.0", installer: false), Release("0.2.0")], Current, UpdateChannel.Release, InstallationKind.Installer, Architecture.X64);
+        var update = ReleaseSelector.SelectUpdate([Release("0.3.0", installer: false), Release("0.2.0")], ReleasePlatform.Windows, Current, UpdateChannel.Release, InstallationKind.Installer, Architecture.X64);
         Assert.Equal("0.2.0", update!.Version.ToString());
     }
 
@@ -94,7 +94,7 @@ public class ReleaseSelectorTests
     [InlineData(InstallationKind.SideloadedPackage)]
     public void Packaged_installations_never_get_a_github_asset(InstallationKind kind)
     {
-        Assert.Null(ReleaseSelector.SelectUpdate([Release("0.9.0")], Current, UpdateChannel.Release, kind, Architecture.X64));
+        Assert.Null(ReleaseSelector.SelectUpdate([Release("0.9.0")], ReleasePlatform.Windows, Current, UpdateChannel.Release, kind, Architecture.X64));
     }
 
     [Theory]

@@ -15,7 +15,7 @@ public sealed class UpdateServiceTests : IDisposable
     private UpdateStateStore Store => new(Path.Combine(_directory, "updates.json"), Log.Null);
 
     private static UpdateEnvironment Environment(InstallationKind kind = InstallationKind.Portable, bool repository = true, string publisher = "") =>
-        new(SemVersion.Parse("0.1.2"), kind, Architecture.X64, repository ? Repository : null, publisher);
+        new(ReleasePlatform.Windows, SemVersion.Parse("0.1.2"), kind, Architecture.X64, repository ? Repository : null, publisher);
 
     private UpdateService Service(FakeSource source, UpdateEnvironment? environment = null, UpdateChannel channel = UpdateChannel.Release) =>
         new(environment ?? Environment(), source, Store, () => channel, Log.Null, _clock);

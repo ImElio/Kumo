@@ -55,6 +55,7 @@ public enum Architecture
 public sealed record ReleaseAsset(string Name, Uri DownloadUrl, long Size);
 
 public sealed record UpdateRelease(
+    ReleasePlatform Platform,
     SemVersion Version,
     string Tag,
     string Title,
@@ -127,13 +128,14 @@ public static class ReleaseSelector
     }
 
     /// <summary>
-    /// The highest eligible version above <paramref name="current"/> that has an asset for this installation, chosen
-    /// by SemVer precedence rather than publication date. Never returns an older or equal version.
+    /// The highest eligible version of this platform above <paramref name="current"/> that has an asset for this
+    /// installation, chosen by SemVer precedence rather than publication date or GitHub's "latest" flag. Never returns
+    /// an older or equal version.
     /// </summary>
-    public static UpdateRelease? SelectUpdate(IEnumerable<UpdateRelease> releases, SemVersion current, UpdateChannel channel,
-        InstallationKind kind, Architecture architecture) =>
+    public static UpdateRelease? SelectUpdate(IEnumerable<UpdateRelease> releases, ReleasePlatform platform, SemVersion current,
+        UpdateChannel channel, InstallationKind kind, Architecture architecture) =>
         releases
-            .Where(r => IsEligible(r, channel) && r.Version > current && ReleaseAssets.For(r, kind, architecture) != null)
+            .Where(r => r.Platform == platform && IsEligible(r, channel) && r.Version > current && ReleaseAssets.For(r, kind, architecture) != null)
             .OrderByDescending(r => r.Version)
             .FirstOrDefault();
 }

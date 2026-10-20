@@ -112,7 +112,7 @@ public sealed class GitHubReleaseSource : IUpdateSource
         {
             if (element.ValueKind != JsonValueKind.Object
                 || !element.TryGetProperty("tag_name", out var tag)
-                || !SemVersion.TryParseTag(tag.GetString(), out var version)
+                || !ReleaseTag.TryParse(tag.GetString(), out var platform, out var version)
                 || !element.TryGetProperty("html_url", out var page)
                 || !Uri.TryCreate(page.GetString(), UriKind.Absolute, out var pageUri)
                 || pageUri.Scheme != Uri.UriSchemeHttps)
@@ -131,6 +131,7 @@ public sealed class GitHubReleaseSource : IUpdateSource
             }
 
             release = new UpdateRelease(
+                platform,
                 version,
                 tag.GetString()!,
                 String(element, "name") ?? tag.GetString()!,

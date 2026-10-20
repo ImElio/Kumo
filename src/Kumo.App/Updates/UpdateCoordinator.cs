@@ -128,7 +128,7 @@ internal sealed class UpdateCoordinator : IDisposable
         var metadata = Assembly.GetExecutingAssembly().GetCustomAttributes<AssemblyMetadataAttribute>().ToDictionary(a => a.Key, a => a.Value ?? string.Empty);
         RepositoryIdentity? repository = RepositoryIdentity.TryParse(metadata.GetValueOrDefault("KumoUpdateRepository"), out var identity) ? identity : null;
         var architecture = RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? Architecture.Arm64 : Architecture.X64;
-        return new UpdateEnvironment(ProductVersion(), kind, architecture, repository, metadata.GetValueOrDefault("KumoUpdatePublisher", string.Empty));
+        return new UpdateEnvironment(ReleasePlatform.Windows, ProductVersion(), kind, architecture, repository, metadata.GetValueOrDefault("KumoUpdatePublisher", string.Empty));
     }
 
     private static bool IsStoreSigned()

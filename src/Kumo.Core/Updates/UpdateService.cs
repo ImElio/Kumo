@@ -21,6 +21,7 @@ public enum UpdateCapability
 
 /// <param name="ExpectedPublisher">Certificate subject the installer must be signed by; empty disables installation.</param>
 public sealed record UpdateEnvironment(
+    ReleasePlatform Platform,
     SemVersion CurrentVersion,
     InstallationKind Installation,
     Architecture Architecture,
@@ -278,7 +279,7 @@ public sealed class UpdateService
             _state.RetryAfterUtc = null;
             _store.Save(_state);
 
-            var update = ReleaseSelector.SelectUpdate(releases, Environment.CurrentVersion, channel, Environment.Installation, Environment.Architecture);
+            var update = ReleaseSelector.SelectUpdate(releases, Environment.Platform, Environment.CurrentVersion, channel, Environment.Installation, Environment.Architecture);
             return update is null
                 ? new UpdateCheckResult(UpdateStatus.UpToDate, UpToDateMessage(channel))
                 : new UpdateCheckResult(UpdateStatus.Available, $"Kumo {update.Version.ToShortString()} is available.", update);
