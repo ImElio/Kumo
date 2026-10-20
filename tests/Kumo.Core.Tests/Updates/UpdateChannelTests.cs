@@ -15,7 +15,7 @@ public sealed class UpdateChannelTests : IDisposable
 
     public void Dispose() => Directory.Delete(_directory, recursive: true);
 
-    private UpdateService Service(IUpdateSource source, string current = "0.1.0", InstallationKind kind = InstallationKind.Portable) =>
+    private UpdateService Service(IUpdateSource source, string current = "0.1.0", InstallationKind kind = InstallationKind.NotInstalled) =>
         new(new UpdateEnvironment(ReleasePlatform.Windows, SemVersion.Parse(current), kind, Architecture.X64, Repository, string.Empty), source,
             new UpdateStateStore(Path.Combine(_directory, "updates.json"), Log.Null), () => _channel, Log.Null, _clock, () => _automatic);
 
@@ -64,7 +64,7 @@ public sealed class UpdateChannelTests : IDisposable
     [InlineData(UpdateChannel.Development, "0.3.0-dev.7")]
     public void Each_channel_offers_the_highest_version_it_accepts(UpdateChannel channel, string expected)
     {
-        var update = ReleaseSelector.SelectUpdate(Catalogue, ReleasePlatform.Windows, SemVersion.Parse("0.1.0"), channel, InstallationKind.Portable, Architecture.X64);
+        var update = ReleaseSelector.SelectUpdate(Catalogue, ReleasePlatform.Windows, SemVersion.Parse("0.1.0"), channel, InstallationKind.NotInstalled, Architecture.X64);
         Assert.Equal(expected, update!.Version.ToString());
     }
 

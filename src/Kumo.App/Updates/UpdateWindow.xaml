@@ -37,12 +37,12 @@
           </StackPanel>
         </DockPanel>
 
-        <StackPanel x:Name="Actions" DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0" />
-
-        <StackPanel x:Name="ProgressPanel" DockPanel.Dock="Bottom" Margin="0,16,0,0" Visibility="Collapsed">
-          <ProgressBar x:Name="Progress" Height="4" Maximum="1" AutomationProperties.Name="Download progress" />
-          <TextBlock x:Name="ProgressText" FontSize="12" Margin="0,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+        <StackPanel x:Name="ProgressPanel" DockPanel.Dock="Top" Margin="80,14,0,0" Visibility="Collapsed">
+          <ProgressBar x:Name="Progress" Height="6" Maximum="1" AutomationProperties.Name="Update progress" />
+          <TextBlock x:Name="ProgressText" FontSize="12" Margin="0,8,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
         </StackPanel>
+
+        <StackPanel x:Name="Actions" DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0" />
 
         <Border x:Name="NotesCard" Margin="0,16,0,0" Padding="0" CornerRadius="8" BorderThickness="1" Visibility="Collapsed"
                 Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">

@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-  Builds the portable ZIPs, the NSIS installers and SHA256SUMS.txt for every supported architecture.
+  Builds the NSIS installers and SHA256SUMS.txt for every supported architecture.
 .DESCRIPTION
   Output names follow the convention the updater relies on (see docs/releases.md):
-    Kumo-<version>-win-<arch>.zip, Kumo-<version>-win-<arch>-setup.exe, SHA256SUMS.txt
+    Kumo-<version>-win-<arch>-setup.exe, SHA256SUMS.txt
   The update repository is embedded so the build knows where its releases come from; leave it empty for local builds.
 #>
 param(
@@ -12,8 +12,6 @@ param(
   [string]$SourceRevision = "",
   [string[]]$Runtimes = @("win-x64", "win-arm64"),
   [string]$OutDir = "artifacts/release",
-  # Fail instead of skipping when NSIS is missing; the release workflow sets this.
-  [switch]$RequireInstaller,
   # Build for public download: the build fails unless the update repository is configured.
   [switch]$PublicRelease,
   # Optional signing command for the installer and uninstaller, with %1 standing for the file to sign.
@@ -37,8 +35,7 @@ $makensis = (Get-Command makensis -ErrorAction SilentlyContinue).Source
 if (-not $makensis) {
   $makensis = @("${env:ProgramFiles(x86)}\NSIS\makensis.exe", "$env:ProgramFiles\NSIS\makensis.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
-if (-not $makensis -and $RequireInstaller) { throw "NSIS (makensis) is required to build the installer." }
-if (-not $makensis) { Write-Warning "NSIS not found; building portable ZIPs only." }
+if (-not $makensis) { throw "NSIS (makensis) is required to build the installer." }
 
 $out = Join-Path $root $OutDir
 if (Test-Path $out) { Remove-Item $out -Recurse -Force }
@@ -61,23 +58,18 @@ foreach ($runtime in $Runtimes) {
   & dotnet @arguments
   if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed for $runtime." }
 
-  $zip = Join-Path $out "Kumo-$version-$runtime.zip"
-  Compress-Archive -Path (Join-Path $publish "*") -DestinationPath $zip -CompressionLevel Optimal
-
-  if ($makensis) {
-    $arch = $runtime.Replace("win-", "")
-    $nsis = @(
-      "/V2",
-      "/DVERSION=$version", "/DVERSION_NUMERIC=$numeric", "/DARCH=$arch",
-      "/DSOURCE_DIR=$publish",
-      "/DOUTFILE=$(Join-Path $out "Kumo-$version-$runtime-setup.exe")",
-      "/DICON=$(Join-Path $root "assets/icons/kumo.ico")",
-      "/DLICENSE_FILE=$(Join-Path $root "LICENSE")"
-    )
-    if ($SignCommand) { $nsis += "/DSIGN_COMMAND=$SignCommand" }
-    & $makensis @nsis (Join-Path $root "packaging/installer/Kumo.nsi")
-    if ($LASTEXITCODE -ne 0) { throw "makensis failed for $runtime." }
-  }
+  $arch = $runtime.Replace("win-", "")
+  $nsis = @(
+    "/V2",
+    "/DVERSION=$version", "/DVERSION_NUMERIC=$numeric", "/DARCH=$arch",
+    "/DSOURCE_DIR=$publish",
+    "/DOUTFILE=$(Join-Path $out "Kumo-$version-$runtime-setup.exe")",
+    "/DICON=$(Join-Path $root "assets/icons/kumo.ico")",
+    "/DLICENSE_FILE=$(Join-Path $root "LICENSE")"
+  )
+  if ($SignCommand) { $nsis += "/DSIGN_COMMAND=$SignCommand" }
+  & $makensis @nsis (Join-Path $root "packaging/installer/Kumo.nsi")
+  if ($LASTEXITCODE -ne 0) { throw "makensis failed for $runtime." }
 }
 
 $lines = Get-ChildItem $out -File | Where-Object Name -ne "SHA256SUMS.txt" | Sort-Object Name | ForEach-Object {

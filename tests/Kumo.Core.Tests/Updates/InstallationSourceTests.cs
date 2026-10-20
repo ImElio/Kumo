@@ -9,12 +9,12 @@ public class InstallationSourceTests
     [InlineData(true, false, null, InstallationKind.SideloadedPackage)]
     [InlineData(false, false, """{"kind":"installer"}""", InstallationKind.Installer)]
     [InlineData(false, false, """{"kind":"installer","version":"0.2.0"}""", InstallationKind.Installer)]
-    [InlineData(false, false, null, InstallationKind.Portable)]
-    [InlineData(false, false, "", InstallationKind.Portable)]
-    [InlineData(false, false, """{"kind":"portable"}""", InstallationKind.Portable)]
-    [InlineData(false, false, """{"kind":1}""", InstallationKind.Portable)]
-    [InlineData(false, false, "not json", InstallationKind.Portable)]
-    [InlineData(false, true, null, InstallationKind.Portable)]
+    [InlineData(false, false, null, InstallationKind.NotInstalled)]
+    [InlineData(false, false, "", InstallationKind.NotInstalled)]
+    [InlineData(false, false, """{"kind":"portable"}""", InstallationKind.NotInstalled)]
+    [InlineData(false, false, """{"kind":1}""", InstallationKind.NotInstalled)]
+    [InlineData(false, false, "not json", InstallationKind.NotInstalled)]
+    [InlineData(false, true, null, InstallationKind.NotInstalled)]
     public void Installation_kind_comes_from_package_identity_and_the_installer_marker(bool packaged, bool store, string? marker, InstallationKind expected)
     {
         Assert.Equal(expected, InstallationSource.Resolve(packaged, store, marker));
@@ -23,7 +23,7 @@ public class InstallationSourceTests
     [Theory]
     [InlineData(InstallationKind.Store, "Microsoft Store")]
     [InlineData(InstallationKind.Installer, "GitHub")]
-    [InlineData(InstallationKind.Portable, "Portable")]
+    [InlineData(InstallationKind.NotInstalled, "Not installed (development build)")]
     [InlineData(InstallationKind.SideloadedPackage, "Unknown")]
     public void Installation_source_is_named_for_people(InstallationKind kind, string expected)
     {

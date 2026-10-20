@@ -49,7 +49,6 @@ A Windows release is a **published GitHub Release** (not just a tag) in the upst
 | Title | `Kumo for Windows <version>` |
 | Latest flag | Never set ("Set as the latest release" stays unticked when publishing) |
 | Notes | Markdown body generated from the previous Windows tag; shown in Settings → Updates and the update window |
-| Portable assets | `Kumo-<version>-win-x64.zip`, `Kumo-<version>-win-arm64.zip` |
 | Installer assets | `Kumo-<version>-win-x64-setup.exe`, `Kumo-<version>-win-arm64-setup.exe` (NSIS); must be Authenticode-signed before Kumo installs them by itself |
 | Integrity | `SHA256SUMS.txt`, lines of `<sha256>  <file name>` covering every other asset |
 
@@ -64,7 +63,7 @@ the next lower eligible version is considered instead.
 3. Create and push an annotated tag: `git tag -a windows/v0.2.0 -m "Kumo for Windows 0.2.0"` then
    `git push origin windows/v0.2.0`.
 4. The **Release Windows** workflow validates the tag against the version, builds, runs all tests, installs NSIS if the
-   runner lacks it, packages ZIPs and installers for both architectures and writes `SHA256SUMS.txt`. Packaging uses
+   runner lacks it, packages the installers for both architectures and writes `SHA256SUMS.txt`. Packaging uses
    `-PublicRelease`, so the build fails if the update repository is missing or invalid, and the previous Windows tag
    for generated notes is found by `tools/Kumo.ReleaseTool` with the updater's own SemVer rules.
 5. The `draft` job waits for approval in the protected `release` environment, re-checks the checksums and creates a
@@ -86,7 +85,7 @@ the next lower eligible version is considered instead.
 
 There is no signing yet, and no keys or certificates are stored in this repository. When signing is introduced
 (Azure Trusted Signing or a certificate held in a hardware-backed CI secret), add a signing step to the `build` job
-after `dotnet publish` and before the ZIPs, installers and `SHA256SUMS.txt` are created, so the checksums cover the
+after `dotnet publish` and before the installers and `SHA256SUMS.txt` are created, so the checksums cover the
 signed binaries. Pass the signing command to `package-release.ps1 -SignCommand` so NSIS signs the installer and its
 uninstaller. Then set `KUMO_UPDATE_PUBLISHER`.
 

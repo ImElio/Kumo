@@ -103,12 +103,14 @@ internal sealed class UpdateCoordinator : IDisposable
 
     /// <summary>
     /// Starts the installer silently as a separate, non-elevated process; it closes this Kumo, updates the files and
-    /// starts the new version. The caller then exits Kumo.
+    /// starts the new version.
     /// </summary>
-    public void LaunchInstaller(string path)
+    public Process LaunchInstaller(string path)
     {
-        Process.Start(new ProcessStartInfo(path, "/S /relaunch") { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(path)! });
+        var process = Process.Start(new ProcessStartInfo(path, "/S /relaunch") { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(path)! })
+            ?? throw new System.ComponentModel.Win32Exception("The installer did not start.");
         _log.Info("Installer launched");
+        return process;
     }
 
     /// <summary>Removes downloads left by an earlier session, including partial or interrupted ones.</summary>

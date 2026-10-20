@@ -18,7 +18,7 @@ procedure proves the pieces work together against GitHub.
 
 ```powershell
 # Directory.Build.props and app.manifest at 0.1.0
-pwsh tools/package-release.ps1 -PublicRelease -RequireInstaller -Runtimes win-x64 `
+pwsh tools/package-release.ps1 -PublicRelease -Runtimes win-x64 `
   -Repository "<you>/kumo-update-test" -Publisher "<certificate subject or empty>" `
   -SignCommand "<sign command or omit>" -OutDir artifacts/test-a
 ```

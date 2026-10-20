@@ -9,7 +9,7 @@ public class ReleasePlatformTests
 
     private static UpdateRelease? Select(IEnumerable<UpdateRelease> releases, UpdateChannel channel,
         ReleasePlatform platform = ReleasePlatform.Windows, Architecture architecture = Architecture.X64) =>
-        ReleaseSelector.SelectUpdate(releases, platform, Current, channel, InstallationKind.Portable, architecture);
+        ReleaseSelector.SelectUpdate(releases, platform, Current, channel, InstallationKind.NotInstalled, architecture);
 
     [Theory]
     [InlineData("windows/v1.2.0", ReleasePlatform.Windows, "1.2.0")]

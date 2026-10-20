@@ -9,13 +9,11 @@ internal static class UpdateFixtures
 {
     public static readonly RepositoryIdentity Repository = new("kumo-test", "kumo");
 
-    public static UpdateRelease Release(string version, bool? prerelease = null, bool draft = false, bool portable = true, bool installer = true, Architecture architecture = Architecture.X64,
+    public static UpdateRelease Release(string version, bool? prerelease = null, bool draft = false, bool installer = true, Architecture architecture = Architecture.X64,
         ReleasePlatform platform = ReleasePlatform.Windows)
     {
         var parsed = SemVersion.Parse(version);
         var assets = new List<ReleaseAsset>();
-        if (portable)
-            assets.Add(Asset(ReleaseAssets.PortableName(parsed, architecture)));
         if (installer)
             assets.Add(Asset(ReleaseAssets.InstallerName(parsed, architecture)));
         assets.Add(Asset(ReleaseAssets.Checksums));

@@ -15,10 +15,10 @@ public static class InstallationSource
     {
         if (packaged)
             return storeSigned ? InstallationKind.Store : InstallationKind.SideloadedPackage;
-        return IsInstallerMarker(markerJson) ? InstallationKind.Installer : InstallationKind.Portable;
+        return IsInstallerMarker(markerJson) ? InstallationKind.Installer : InstallationKind.NotInstalled;
     }
 
-    /// <summary>The marker must be exactly <c>{"kind":"installer"}</c> (extra properties allowed); anything else means portable.</summary>
+    /// <summary>The marker must be exactly <c>{"kind":"installer"}</c> (extra properties allowed); anything else means not installed.</summary>
     public static bool IsInstallerMarker(string? json)
     {
         if (string.IsNullOrWhiteSpace(json) || json.Length > 4096)
@@ -45,7 +45,7 @@ public static class InstallationSource
     {
         InstallationKind.Store => "Microsoft Store",
         InstallationKind.Installer => "GitHub",
-        InstallationKind.Portable => "Portable",
+        InstallationKind.NotInstalled => "Not installed (development build)",
         _ => "Unknown",
     };
 }

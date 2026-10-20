@@ -7,7 +7,6 @@
 2. **Investigate the one unaccepted drop** seen by the drag probe (first drag after a Release start-up). Detailed
    logging now records drag entry and rejected drops.
 3. **Packaging.** Recommended order:
-   - A self-contained portable ZIP (about 69 MB) for early testers.
    - The per-user NSIS installer is built; it needs code signing (next item) before Kumo can update through it.
    - MSIX later. It would need the `windows.startupTask` extension instead of the `Run` key and a Store-signed
      identity; low-level hooks and drag-and-drop work in full-trust MSIX apps.

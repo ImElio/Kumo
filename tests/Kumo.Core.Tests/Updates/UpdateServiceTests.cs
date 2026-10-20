@@ -14,7 +14,7 @@ public sealed class UpdateServiceTests : IDisposable
 
     private UpdateStateStore Store => new(Path.Combine(_directory, "updates.json"), Log.Null);
 
-    private static UpdateEnvironment Environment(InstallationKind kind = InstallationKind.Portable, bool repository = true, string publisher = "") =>
+    private static UpdateEnvironment Environment(InstallationKind kind = InstallationKind.NotInstalled, bool repository = true, string publisher = "") =>
         new(ReleasePlatform.Windows, SemVersion.Parse("0.1.2"), kind, Architecture.X64, repository ? Repository : null, publisher);
 
     private UpdateService Service(FakeSource source, UpdateEnvironment? environment = null, UpdateChannel channel = UpdateChannel.Release) =>
@@ -77,11 +77,11 @@ public sealed class UpdateServiceTests : IDisposable
     }
 
     [Theory]
-    [InlineData(InstallationKind.Portable, "", UpdateCapability.NotifyOnly)]
+    [InlineData(InstallationKind.NotInstalled, "", UpdateCapability.NotifyOnly)]
     [InlineData(InstallationKind.SideloadedPackage, "", UpdateCapability.NotifyOnly)]
     [InlineData(InstallationKind.Installer, "", UpdateCapability.InstallChecked)]
     [InlineData(InstallationKind.Installer, "CN=Kumo", UpdateCapability.InstallVerified)]
-    [InlineData(InstallationKind.Portable, "CN=Kumo", UpdateCapability.NotifyOnly)]
+    [InlineData(InstallationKind.NotInstalled, "CN=Kumo", UpdateCapability.NotifyOnly)]
     [InlineData(InstallationKind.Store, "CN=Kumo", UpdateCapability.StoreManaged)]
     public void Only_signed_installer_installations_may_install_updates(InstallationKind kind, string publisher, UpdateCapability expected)
     {

@@ -21,7 +21,7 @@
 | Microsoft Store | Package identity and `Package.Current.SignatureKind == Store` | Kumo never contacts GitHub. Settings show "Updates managed by Microsoft Store." |
 | MSIX outside the Store | Package identity, not Store-signed | Updates are announced; the button opens the release page. A GitHub installer is never run over a package. |
 | Kumo installer | `Kumo.installation.json` with `{"kind":"installer"}` next to `Kumo.exe`, written by the installer | Verified download and handoff, **only if** the build has an expected publisher; otherwise announced like portable. |
-| Portable ZIP | Neither of the above | Updates are announced; the button opens the release page. |
+| Not installed | Neither of the above, as with development builds started from their folder | Updates are announced; the button opens the release page. Kumo is only distributed through its installer. |
 | Any build without a configured repository | `KumoUpdateRepository` empty (all local builds) | No checks at all; Settings say so. |
 
 Folder names and install paths are never used to guess the installation type.
@@ -52,7 +52,7 @@ Settings → Updates follows the update service: "Kumo hasn't checked for update
 a short failure message ("Couldn't check for updates. Try again later."), or "Updates managed by Microsoft Store.".
 **See what's new** (and the update notification's What's new) opens the update window as a resizable What's new
 window: the full release notes with headings, lists, links and screenshots hosted by GitHub, and Later, View on GitHub
-and Update. Downloading and installing continue in the same window, only for installations that may install updates. The installation source reads Microsoft Store, GitHub (Kumo's installer), Portable, or Unknown
+and Update. After **Update**, the same window shows the download (percentage and megabytes), the check, and then "Installing Kumo X" until the installer closes Kumo and starts the new version; if the installer ends without doing so, the window says the update wasn't installed and offers Try again. This applies to installations that may install updates. The installation source reads Microsoft Store, GitHub (Kumo's installer), Not installed (development build), or Unknown
 (an MSIX package from outside the Store).
 
 ## Notifications
@@ -87,7 +87,7 @@ This protects against corrupted, truncated or mismatched downloads, **not** agai
 able to publish a release in the repository could ship an installer that Kumo would run. Protecting the repository
 (2FA, protected `windows/v*` tags, the approval environment for releases) is therefore part of update security.
 Once installers are signed, setting `KUMO_UPDATE_PUBLISHER` switches to `InstallVerified` and the signature check
-without code changes. Portable copies only announce updates.
+without code changes. Copies that are not installed only announce updates.
 
 ## Current limitations
 

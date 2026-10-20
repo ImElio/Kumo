@@ -15,15 +15,13 @@ public partial class UpdateWindow : Window
 {
     private readonly UpdateCoordinator _updates;
     private readonly Func<bool> _isBusy;
-    private readonly Action _exitForInstall;
     private CancellationTokenSource? _download;
 
-    internal UpdateWindow(UpdateCoordinator updates, Func<bool> isBusy, Action exitForInstall)
+    internal UpdateWindow(UpdateCoordinator updates, Func<bool> isBusy)
     {
         InitializeComponent();
         _updates = updates;
         _isBusy = isBusy;
-        _exitForInstall = exitForInstall;
         Closed += (_, _) => _download?.Cancel();
     }
 
@@ -70,21 +68,20 @@ public partial class UpdateWindow : Window
     private async Task DownloadAsync(UpdateRelease release)
     {
         _download = new CancellationTokenSource();
-        ProgressPanel.Visibility = Visibility.Visible;
-        Progress.Value = 0;
-        ProgressText.Text = string.Empty;
+        ShowProgress("Starting the download…");
         ShowState(MascotState.Processing, $"Downloading Kumo {release.Version.ToShortString()}", "The installer is checked before it runs.",
             Button("Cancel", () => _download.Cancel()));
         var progress = new Progress<DownloadProgress>(p =>
         {
+            Progress.IsIndeterminate = false;
             Progress.Value = p.Fraction;
-            ProgressText.Text = string.Create(CultureInfo.CurrentCulture, $"{p.Received / 1048576.0:0.0} of {p.Total / 1048576.0:0.0} MB");
+            ProgressText.Text = string.Create(CultureInfo.GetCultureInfo("en-US"),
+                $"{p.Fraction:0%} · {p.Received / 1048576.0:0.0} of {p.Total / 1048576.0:0.0} MB");
         });
 
         try
         {
             string installer = await _updates.DownloadVerifiedInstallerAsync(release, progress, _download.Token);
-            ProgressPanel.Visibility = Visibility.Collapsed;
             if (_isBusy())
                 ShowReady(installer, release);
             else
@@ -93,24 +90,26 @@ public partial class UpdateWindow : Window
         catch (OperationCanceledException)
         {
             ProgressPanel.Visibility = Visibility.Collapsed;
-            ShowState(MascotState.Cancelled, "Download cancelled", "Nothing was installed.", Button("Close", Close, primary: true));
+            ShowState(MascotState.Cancelled, "Download cancelled", "Nothing was installed.",
+                Button("Try again", async () => await DownloadAsync(release)), Button("Close", Close, primary: true));
         }
         catch (UpdateException ex)
         {
             ProgressPanel.Visibility = Visibility.Collapsed;
             ShowState(MascotState.Error, "The update wasn't installed", ex.Message,
-                Button("What's new", () => Open(release.PageUrl)), Button("Close", Close, primary: true));
+                Button("Try again", async () => await DownloadAsync(release)), Button("Close", Close, primary: true));
         }
         catch (System.IO.IOException)
         {
             ProgressPanel.Visibility = Visibility.Collapsed;
             ShowState(MascotState.Error, "The update wasn't installed", "The installer couldn't be saved. Check the free disk space and try again.",
-                Button("Close", Close, primary: true));
+                Button("Try again", async () => await DownloadAsync(release)), Button("Close", Close, primary: true));
         }
     }
 
     private void ShowReady(string installer, UpdateRelease release)
     {
+        ProgressPanel.Visibility = Visibility.Collapsed;
         ShowState(MascotState.Success, "Ready to install",
             $"Kumo {release.Version.ToShortString()} is verified. Kumo will restart by itself; your settings are kept.",
             Button("Later", Close),
@@ -125,11 +124,37 @@ public partial class UpdateWindow : Window
             }, primary: true));
     }
 
-    private void Install(string installer, UpdateRelease release)
+    /// <summary>
+    /// Starts the installer and stays open showing progress: the installer itself asks Kumo to exit before it replaces
+    /// the files, then starts the new version. If it ends while Kumo is still running, it did not install anything.
+    /// </summary>
+    private async void Install(string installer, UpdateRelease release)
     {
-        ShowState(MascotState.Processing, $"Installing Kumo {release.Version.ToShortString()}", "Kumo will restart in a moment.");
-        _updates.LaunchInstaller(installer);
-        _exitForInstall();
+        ShowProgress("Installing…");
+        ShowState(MascotState.Converting, $"Installing Kumo {release.Version.ToShortString()}", "Kumo will close and open again by itself in a moment.");
+        int exitCode;
+        try
+        {
+            using var process = _updates.LaunchInstaller(installer);
+            await process.WaitForExitAsync();
+            exitCode = process.ExitCode;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            exitCode = -1;
+        }
+        ProgressPanel.Visibility = Visibility.Collapsed;
+        ShowState(MascotState.Error, "The update wasn't installed",
+            exitCode == -1 ? "The installer couldn't be started." : $"The installer stopped before finishing (code {exitCode}). Kumo wasn't changed.",
+            Button("Try again", () => Install(installer, release)), Button("Close", Close, primary: true));
+    }
+
+    private void ShowProgress(string text)
+    {
+        ProgressPanel.Visibility = Visibility.Visible;
+        Progress.IsIndeterminate = true;
+        Progress.Value = 0;
+        ProgressText.Text = text;
     }
 
     private void ShowState(MascotState mascot, string headline, string detail, params Button[] actions)

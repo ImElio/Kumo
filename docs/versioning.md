@@ -14,7 +14,7 @@ never compared with the Windows version. Everything else derives from it:
 | Assembly / file version (Windows) | `0.2.0.0` | SDK, numeric part only |
 | `src/Kumo.App/app.manifest` | `0.2.0.0` | kept in sync, checked by `tools/check-version.ps1` |
 | Release tag | `windows/v0.2.0-beta.1` | created by a maintainer, checked by the release workflow |
-| Release assets | `Kumo-0.2.0-beta.1-win-x64.zip` | `tools/package-release.ps1` |
+| Release assets | `Kumo-0.2.0-beta.1-win-x64-setup.exe` | `tools/package-release.ps1` |
 | MSIX package | `0.2.0.0` | stable versions only (see [distribution.md](distribution.md)) |
 | About and Settings | `0.2.0-beta.1 (abc1234)` | informational version with the short commit |
 

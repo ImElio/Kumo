@@ -1,25 +1,14 @@
 # Distribution
 
-Kumo is planned for two channels: **GitHub Releases** (portable ZIP today, a per-user installer later) and the
-**Microsoft Store** (MSIX). Each installation has exactly one owner for updates; see [updater.md](updater.md).
+Kumo is planned for two channels: **GitHub Releases** (the per-user installer) and the **Microsoft Store** (MSIX).
+There is no portable version: Kumo is an installed app. Each installation has exactly one owner for updates; see [updater.md](updater.md).
 
 ## GitHub Releases
 
-### Portable ZIP (available now)
-
-Produced by `tools/package-release.ps1` for `win-x64` and `win-arm64`. Self-contained: the .NET 10 runtime ships with
-Kumo, so nothing else has to be installed. About 69 MB zipped and 170 MB unpacked for x64; the installer is about 50 MB.
-
-Upgrading a portable copy:
-
-1. Exit Kumo from the tray icon.
-2. Download the new ZIP from the release page Kumo opened, and compare its SHA-256 with `SHA256SUMS.txt`
-   (`Get-FileHash Kumo-<version>-win-x64.zip`).
-3. Replace the contents of the Kumo folder with the new files (or unzip next to it and delete the old folder).
-4. Start Kumo. Settings and logs live in `%LOCALAPPDATA%\Kumo` and are kept. If "Start with Windows" was on and the
-   folder moved, turn it off and on again so the startup entry points to the new location.
-
 ### Installer (NSIS)
+
+Produced by `tools/package-release.ps1` for `win-x64` and `win-arm64`, together with `SHA256SUMS.txt`. Self-contained:
+the .NET 10 runtime ships with Kumo, so nothing else has to be installed. About 50 MB for x64, 170 MB once installed.
 
 `packaging/installer/Kumo.nsi`, built by `tools/package-release.ps1` with NSIS 3 (`makensis`) into
 `Kumo-<version>-win-x64-setup.exe` and `Kumo-<version>-win-arm64-setup.exe`.
@@ -56,17 +45,17 @@ silently (see [updater.md](updater.md#trust-without-a-signature)).
 | Updates | The Store installs updates. Kumo detects Store-signed packages and never contacts GitHub or runs an installer. A Store product link can be added to Settings once the product ID is known. |
 | Start-up | Packaged apps cannot write the `HKCU\…\Run` key effectively; "Start with Windows" must move to the `windows.startupTask` extension and the `StartupTask` WinRT API before submission. |
 | Capabilities | `runFullTrust` (classic desktop app). Low-level input hooks, `RegisterHotKey`, the notification area icon and OLE drag-and-drop work in full-trust packages. |
-| Storage | `%LOCALAPPDATA%` writes from a packaged app are redirected to the package's private folder; settings will not be shared with a portable copy. |
+| Storage | `%LOCALAPPDATA%` writes from a packaged app are redirected to the package's private folder; settings will not be shared with an installer copy. |
 | Certification | Privacy policy URL (Kumo collects nothing, but the Store requires the URL), age rating, screenshots, the WACK test (`appcert.exe`) passing, no crashes on launch, and a working uninstall. The Explorer drag gesture should be explained in the listing because it is not discoverable. |
 
 ### Differences between MSIX and unpackaged installs
 
-| | Portable / installer | MSIX |
+| | Installer | MSIX |
 | --- | --- | --- |
 | Updates | GitHub, via Kumo | Microsoft Store |
 | Start with Windows | `HKCU\…\Run` | StartupTask (to be implemented) |
 | Settings location | `%LOCALAPPDATA%\Kumo` | Package-private `LocalCache` |
-| Uninstall | Delete folder / uninstaller | Windows Settings → Apps |
+| Uninstall | Uninstaller (Windows Settings → Apps) | Windows Settings → Apps |
 | Identity check | Installer marker file | `GetCurrentPackageFullName` and package signature kind |
 
 ## Local development

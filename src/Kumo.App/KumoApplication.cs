@@ -188,7 +188,7 @@ internal sealed class KumoApplication : Application
             return;
         if (_updateWindow == null)
         {
-            _updateWindow = new UpdateWindow(_updates, () => _menu?.HasRunningJobs == true, Shutdown);
+            _updateWindow = new UpdateWindow(_updates, () => _menu?.HasRunningJobs == true);
             ApplyWindowTheme(_updateWindow);
             _updateWindow.Closed += (_, _) => _updateWindow = null;
             _updateWindow.Show();

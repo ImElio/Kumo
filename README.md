@@ -112,13 +112,13 @@ dotnet test Kumo.slnx
 dotnet run --project src/Kumo.App
 ```
 
-Release output (self-contained, about 170 MB; `tools/package-release.ps1` builds the ZIP and installer from it):
+Release output (self-contained, about 170 MB; `tools/package-release.ps1` builds the installer from it):
 
 ```powershell
 dotnet publish src/Kumo.App -c Release -r win-x64 --self-contained true -o artifacts/publish
 ```
 
-Release packages (portable ZIPs, NSIS installers and `SHA256SUMS.txt` for x64 and Arm64; the installers need
+Release packages (NSIS installers and `SHA256SUMS.txt` for x64 and Arm64; they need
 [NSIS 3](https://nsis.sourceforge.io)):
 
 ```powershell
