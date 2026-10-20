@@ -253,9 +253,7 @@
                   </StackPanel>
                 </DockPanel>
                 <Border Margin="36,14,0,0" Padding="16,12" CornerRadius="6" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
-                  <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
-                    <ContentControl x:Name="WhatsNewNotes" Focusable="False" />
-                  </ScrollViewer>
+                  <ContentControl x:Name="WhatsNewNotes" Focusable="False" />
                 </Border>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
                   <Button Content="View on GitHub" MinWidth="130" Click="OnViewOnGitHub" />

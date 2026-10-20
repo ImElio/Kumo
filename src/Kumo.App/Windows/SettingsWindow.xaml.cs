@@ -137,7 +137,7 @@ public partial class SettingsWindow : Window
         if (release == null)
             return;
         WhatsNewTitle.Text = $"What's new in Kumo {release.Version.ToShortString()}";
-        WhatsNewDate.Text = (release.PublishedAt is { } published ? $"Published {published.LocalDateTime:D}" : "Published on GitHub")
+        WhatsNewDate.Text = (release.PublishedAt is { } published ? string.Create(System.Globalization.CultureInfo.GetCultureInfo("en-US"), $"Published {published.LocalDateTime:MMMM d, yyyy}") : "Published on GitHub")
             + (release.Version.IsPrerelease ? " · pre-release" : string.Empty);
         WhatsNewNotes.Content = Updates.ReleaseNotesView.Build(release.Notes);
     }

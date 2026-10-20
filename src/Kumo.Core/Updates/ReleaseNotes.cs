@@ -20,15 +20,19 @@ public enum NotesBlockKind
     Paragraph,
     Bullet,
     Numbered,
+
+    /// <summary>A screenshot on its own line; <see cref="NotesBlock.Image"/> holds its address, the inline its alt text.</summary>
+    Image,
 }
 
 /// <param name="Level">Heading level (1–3), or the item number for numbered lists.</param>
-public sealed record NotesBlock(NotesBlockKind Kind, IReadOnlyList<NotesInline> Inlines, int Level = 0);
+/// <param name="Image">Set only for image blocks; always an https address on a GitHub image host.</param>
+public sealed record NotesBlock(NotesBlockKind Kind, IReadOnlyList<NotesInline> Inlines, int Level = 0, Uri? Image = null);
 
 /// <summary>
 /// Reads the Markdown that GitHub uses for release notes (headings, lists, bold, inline code, links and the bare
 /// URLs of generated notes) into simple blocks for display. Anything else is shown as plain text; nothing is executed
-/// or fetched, and only https links survive.
+/// or fetched, only https links survive, and images are kept only when GitHub itself hosts them.
 /// </summary>
 public static partial class ReleaseNotes
 {
@@ -71,6 +75,12 @@ public static partial class ReleaseNotes
             if (trimmed.Length == 0 || HorizontalRule().IsMatch(trimmed))
             {
                 FlushParagraph();
+                continue;
+            }
+            if (ImagesOnly(trimmed) is { Count: > 0 } images)
+            {
+                FlushParagraph();
+                blocks.AddRange(images);
                 continue;
             }
             if (Heading().Match(trimmed) is { Success: true } heading)
@@ -125,6 +135,60 @@ public static partial class ReleaseNotes
         return inlines;
     }
 
+    public static bool IsAllowedImage(Uri url) =>
+        url.Scheme == Uri.UriSchemeHttps
+        && url.IsDefaultPort
+        && string.IsNullOrEmpty(url.UserInfo)
+        && (ImageHosts.Contains(url.Host)
+            || (url.Host == "github.com" && url.AbsolutePath.StartsWith("/user-attachments/assets/", StringComparison.Ordinal)));
+
+    private static readonly HashSet<string> ImageHosts = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "user-images.githubusercontent.com",
+        "private-user-images.githubusercontent.com",
+        "raw.githubusercontent.com",
+        "objects.githubusercontent.com",
+    };
+
+    /// <summary>
+    /// The images of a line that holds nothing but images: Markdown images, the &lt;img&gt; tags GitHub inserts for
+    /// pasted screenshots, or a bare attachment URL. Images from other hosts are dropped; their alt text is kept.
+    /// </summary>
+    private static List<NotesBlock> ImagesOnly(string line)
+    {
+        var images = new List<NotesBlock>();
+        if (BareAttachment().IsMatch(line))
+        {
+            AddImage(images, line, string.Empty);
+            return images;
+        }
+        var matches = ImageToken().Matches(line);
+        if (matches.Count == 0 || ImageToken().Replace(line, string.Empty).Trim().Length > 0)
+            return images;
+        foreach (Match match in matches)
+        {
+            string source = match.Groups["src"].Success ? match.Groups["src"].Value : HtmlAttribute(match.Value, "src");
+            string alt = match.Groups["alt"].Success ? match.Groups["alt"].Value : HtmlAttribute(match.Value, "alt");
+            AddImage(images, source, alt);
+        }
+        return images;
+    }
+
+    private static void AddImage(List<NotesBlock> images, string source, string alt)
+    {
+        var caption = alt.Length > 0 ? new List<NotesInline> { new(NotesInlineKind.Text, alt) } : new List<NotesInline>();
+        if (Uri.TryCreate(System.Net.WebUtility.HtmlDecode(source), UriKind.Absolute, out var url) && IsAllowedImage(url))
+            images.Add(new NotesBlock(NotesBlockKind.Image, caption, Image: url));
+        else if (caption.Count > 0)
+            images.Add(new NotesBlock(NotesBlockKind.Paragraph, caption));
+    }
+
+    private static string HtmlAttribute(string tag, string name)
+    {
+        var match = Regex.Match(tag, $@"\b{name}\s*=\s*(?:""(?<v>[^""]*)""|'(?<v>[^']*)')", RegexOptions.IgnoreCase);
+        return match.Success ? System.Net.WebUtility.HtmlDecode(match.Groups["v"].Value) : string.Empty;
+    }
+
     private static void AddLink(List<NotesInline> inlines, string label, string href)
     {
         if (Uri.TryCreate(href, UriKind.Absolute, out var url) && url.Scheme == Uri.UriSchemeHttps)
@@ -164,6 +228,12 @@ public static partial class ReleaseNotes
 
     [GeneratedRegex(@"`(?<code>[^`]+)`|\*\*(?<bold>.+?)\*\*|__(?<bold>.+?)__|\[(?<label>[^\]]+)\]\((?<href>[^)\s]+)\)|(?<url>https://[^\s)<>]+)")]
     private static partial Regex InlineToken();
+
+    [GeneratedRegex(@"!\[(?<alt>[^\]]*)\]\((?<src>[^)\s]+)\)|<img\b[^>]*>", RegexOptions.IgnoreCase)]
+    private static partial Regex ImageToken();
+
+    [GeneratedRegex(@"^https://github\.com/user-attachments/assets/[0-9a-fA-F-]+$")]
+    private static partial Regex BareAttachment();
 
     [GeneratedRegex(@"^https://github\.com/[^/]+/[^/]+/pull/(\d+)/?$")]
     private static partial Regex PullRequest();
