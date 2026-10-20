@@ -20,16 +20,35 @@ never moves to a lower version. Someone on `0.3.0-beta.2` who returns to Release
 tags. Until that changes the Development channel offers alpha, beta and release candidate releases, and the Settings
 page says so. Microsoft Store copies ignore channels: the Store owns their updates.
 
+## Platforms
+
+Kumo is released per operating system from this one repository. Each platform has its own tags and its own SemVer
+line, so Windows `1.4.0` and Linux `0.2.0` can coexist and are never compared with each other:
+
+| Platform | Tag | Status |
+| --- | --- | --- |
+| Windows | `windows/v<version>` | released by `.github/workflows/release.yml` |
+| Linux | `linux/v<version>` | reserved; no builds, workflow or updater support yet |
+
+The updater keeps only releases whose tag names its own platform, then applies the channel, architecture and
+installation-type rules below. A tag without a platform prefix (`v0.1.1`) predates this scheme and is read as a
+Windows release; new releases always use the prefix. GitHub's repository-wide "latest release" flag is never read and
+never set by the workflow, because with several platforms it would point at whichever platform published last.
+
+`Kumo.Core.Updates.ReleasePlatform` and `ReleaseTag` hold the platform list and tag format. Adding a platform means a
+new enum value with its prefix, its own version source, asset names and release workflow.
+
 ## Release conventions
 
-A release is a **published GitHub Release** (not just a tag) in the upstream repository:
+A Windows release is a **published GitHub Release** (not just a tag) in the upstream repository:
 
 | Field | Convention |
 | --- | --- |
-| Tag | `v<version>`, e.g. `v0.2.0`, `v0.2.0-beta.1` |
+| Tag | `windows/v<version>`, e.g. `windows/v0.2.0`, `windows/v0.2.0-beta.1` |
 | Pre-release flag | Set if and only if the version has a pre-release part. Releases where flag and version disagree are ignored by the updater. |
-| Title | `Kumo <version>` |
-| Notes | Markdown body; shown in Kumo's update window |
+| Title | `Kumo for Windows <version>` |
+| Latest flag | Never set ("Set as the latest release" stays unticked when publishing) |
+| Notes | Markdown body generated from the previous Windows tag; shown in Settings → Updates and the update window |
 | Portable assets | `Kumo-<version>-win-x64.zip`, `Kumo-<version>-win-arm64.zip` |
 | Installer assets | `Kumo-<version>-win-x64-setup.exe`, `Kumo-<version>-win-arm64-setup.exe` (NSIS); must be Authenticode-signed before Kumo installs them by itself |
 | Integrity | `SHA256SUMS.txt`, lines of `<sha256>  <file name>` covering every other asset |
@@ -42,18 +61,20 @@ the next lower eligible version is considered instead.
 1. Update `<Version>` in `Directory.Build.props` and `assemblyIdentity` in `src/Kumo.App/app.manifest`; run
    `pwsh tools/check-version.ps1`.
 2. Update the documentation and commit on `main`; wait for CI to pass.
-3. Create and push an annotated tag: `git tag -a v0.2.0 -m "Kumo 0.2.0"` then `git push origin v0.2.0`.
-4. The **Release** workflow validates the tag against the version, builds, runs all tests, installs NSIS if the
+3. Create and push an annotated tag: `git tag -a windows/v0.2.0 -m "Kumo for Windows 0.2.0"` then
+   `git push origin windows/v0.2.0`.
+4. The **Release Windows** workflow validates the tag against the version, builds, runs all tests, installs NSIS if the
    runner lacks it, packages ZIPs and installers for both architectures and writes `SHA256SUMS.txt`.
 5. The `draft` job waits for approval in the protected `release` environment, re-checks the checksums and creates a
-   **draft** GitHub Release marked as pre-release when appropriate.
-6. A maintainer downloads and smoke-tests the assets, edits the notes and publishes the draft. Only now can users see
-   it.
+   **draft** GitHub Release marked as pre-release when appropriate and not marked as latest. Generated notes start at
+   the previous Windows tag, so Linux tags never leak into the Windows changelog.
+6. A maintainer downloads and smoke-tests the assets, edits the notes and publishes the draft, leaving "Set as the
+   latest release" unticked. Only now can users see it.
 
 ### Repository setup (one-time)
 
-- Settings → Environments → `release`: add required reviewers and restrict it to `v*` tags.
-- Settings → Rules: protect `v*` tags so only maintainers can create them.
+- Settings → Environments → `release`: add required reviewers and restrict it to `windows/v*` tags (add `linux/v*` when Linux ships).
+- Settings → Rules: protect `windows/v*`, `linux/v*` and legacy `v*` tags so only maintainers can create them.
 - Settings → Actions → General: workflow permissions "Read repository contents".
 - Optional variable `KUMO_UPDATE_PUBLISHER`: the exact subject of the installer signing certificate. Leave it unset
   until installers are signed; without it Kumo never installs updates by itself.

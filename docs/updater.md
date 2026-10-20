@@ -5,6 +5,7 @@
 | Component | Project | Role |
 | --- | --- | --- |
 | `SemVersion` | Core | Strict SemVer 2.0.0 parsing and precedence |
+| `ReleasePlatform`, `ReleaseTag` | Core | Platform-prefixed tags (`windows/v…`, `linux/v…`); releases of other platforms are ignored |
 | `ReleaseSelector`, `ReleaseAssets` | Core | Channel eligibility, asset naming, choosing the highest eligible version |
 | `GitHubReleaseSource` (`IUpdateSource`) | Core | Paginated, unauthenticated GitHub REST listing with error classification |
 | `UpdateDownloader` | Core | HTTPS downloads with host allow-list, size limits, streaming SHA-256 |

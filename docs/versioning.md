@@ -4,14 +4,16 @@ Kumo follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
 ## One canonical version
 
-The version lives in exactly one place: `<Version>` in `Directory.Build.props`. Everything else derives from it:
+Each platform has its own version line (see [releases.md](releases.md#platforms)). The Windows version lives in
+exactly one place: `<Version>` in `Directory.Build.props`. When Linux is added it gets its own version source and is
+never compared with the Windows version. Everything else derives from it:
 
 | Where | Value for `0.2.0-beta.1` | How |
 | --- | --- | --- |
 | Assembly informational version (what Kumo reports) | `0.2.0-beta.1+<commit>` | SDK, with the source revision appended |
 | Assembly / file version (Windows) | `0.2.0.0` | SDK, numeric part only |
 | `src/Kumo.App/app.manifest` | `0.2.0.0` | kept in sync, checked by `tools/check-version.ps1` |
-| Release tag | `v0.2.0-beta.1` | created by a maintainer, checked by the release workflow |
+| Release tag | `windows/v0.2.0-beta.1` | created by a maintainer, checked by the release workflow |
 | Release assets | `Kumo-0.2.0-beta.1-win-x64.zip` | `tools/package-release.ps1` |
 | MSIX package | `0.2.0.0` | stable versions only (see [distribution.md](distribution.md)) |
 | About and Settings | `0.2.0-beta.1 (abc1234)` | informational version with the short commit |
