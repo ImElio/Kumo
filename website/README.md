@@ -46,7 +46,7 @@ from `src/Kumo.App/Mascot/Images`.
 | File | Source |
 | --- | --- |
 | `kumo.webp` | `assets/mascot/kumo-processing.svg` |
-| `kumo-64.png`, `favicon-32.png`, `apple-touch-icon.png` | `assets/mascot/kumo-idle.svg` |
+| `favicon-32.png`, `apple-touch-icon.png` | `assets/mascot/kumo-idle.svg` |
 | `radial-menu.webp` | `assets/github/example1.png`, cropped to the menu so the rest of the desktop is not shown |
 | `crop-editor.webp` | `assets/github/example2.png` |
 | `shot-convert.webp`, `shot-pdfs.webp` | Captured from the installed Kumo 0.1.0: the Convert submenu for one JPEG and the menu for two PDFs, in front of a plain backdrop |
