@@ -36,11 +36,12 @@ Upgrading a portable copy:
 | Version resource | `ProductVersion` is the SemVer version, which Kumo checks before running a downloaded installer. |
 | Registration | Start menu shortcut and an "Installed apps" entry under `HKCU\…\Uninstall\Kumo` (version, size, quiet uninstall string). |
 | Uninstall | Exits Kumo, removes the startup entry, shortcut, registry entry and the install folder. Settings and logs in `%LOCALAPPDATA%\Kumo` are kept. |
-| Silent use | `Kumo-<version>-win-x64-setup.exe /S [/D=<folder>\Kumo]` and `Uninstall.exe /S`. |
+| Silent use | `Kumo-<version>-win-x64-setup.exe /S [/relaunch] [/D=<folder>\Kumo]` and `Uninstall.exe /S`. `/relaunch` starts Kumo after a successful install; the updater uses it. |
 | Signing | `-SignCommand` in `package-release.ps1` (NSIS `!finalize` / `!uninstfinalize`) signs both the installer and the embedded uninstaller once a certificate exists. |
 
-Unsigned installers trigger SmartScreen's "unknown publisher" warning, and Kumo will not run them by itself; until
-signing exists users download and run them by hand.
+Unsigned installers trigger SmartScreen's "unknown publisher" warning when downloaded in a browser. Installed copies
+update themselves without it: Kumo downloads the setup, checks it against `SHA256SUMS.txt` and its version, and runs it
+silently (see [updater.md](updater.md#trust-without-a-signature)).
 
 ## Microsoft Store (MSIX)
 

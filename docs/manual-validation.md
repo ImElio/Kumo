@@ -63,5 +63,6 @@ actually executed. Last updated 2026-10-20 on Windows 11 Pro 10.0.26200, one mon
 | Interactive installer pages, Finish → Start Kumo, Installed apps entry | Run the installer by hand | Pending (first page checked from a screenshot) |
 | Installer on Windows on Arm | Arm64 PC | Pending |
 | Signed installer download, verification and handoff | Requires a signed installer release and `KUMO_UPDATE_PUBLISHER` | Blocked: no signing yet |
+| Silent update and relaunch of an installed copy | `setup.exe /S /relaunch` over an installed, running Kumo | Automated locally 2026-10-20: old Kumo closed, files replaced, new Kumo started from the install folder in about 1.5 s; download from a real release still pending ([update-testing.md](update-testing.md)) |
 | Store-installed copy shows "Updates managed by Microsoft Store" | Install from the Store | Blocked: not in the Store yet |
 | Release workflow end to end | Push a tag in a test fork with the `release` environment configured | Pending |

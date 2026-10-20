@@ -79,7 +79,8 @@ the next lower eligible version is considered instead.
 - Settings → Rules: protect `windows/v*`, `linux/v*` and legacy `v*` tags so only maintainers can create them.
 - Settings → Actions → General: workflow permissions "Read repository contents".
 - Optional variable `KUMO_UPDATE_PUBLISHER`: the exact subject of the installer signing certificate. Leave it unset
-  until installers are signed; without it Kumo never installs updates by itself.
+  until installers are signed; without it installed copies still update themselves after the SHA-256 and version
+  checks, but nothing authenticates the publisher (see [updater.md](updater.md#trust-without-a-signature)).
 
 ### Signing
 

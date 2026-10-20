@@ -67,17 +67,29 @@ announced immediately. Notifications respect Settings → Notifications.
 | Update metadata from somewhere else | The repository is fixed at build time (`KumoUpdateRepository`, set by CI to the repository that built the release). Users cannot point Kumo at another source. |
 | Downloads from unexpected hosts | Only `https` on the default port to `github.com`, `objects.githubusercontent.com` and `release-assets.githubusercontent.com`. Redirects are followed by hand (at most five) and every hop is checked. |
 | Corrupted or truncated download | Size must match the release metadata and stay under 300 MB; SHA-256 must match `SHA256SUMS.txt`; the file only gets its final name after both checks. |
-| Compromised release (attacker can upload assets) | Checksums alone do **not** help here: they come from the same release. The installer must carry a valid Authenticode signature (chain and revocation checked by `WinVerifyTrust`) whose subject equals the publisher compiled into the build, and its product version must equal the offered version. Anything else is deleted unrun. |
+| Compromised release (attacker can upload assets) | Checksums alone do **not** help here: they come from the same release. With a publisher configured, the installer must carry a valid Authenticode signature (chain and revocation checked by `WinVerifyTrust`) whose subject equals the publisher compiled into the build, and its product version must equal the offered version. Anything else is deleted unrun. |
 | Path tricks in asset names | Asset names must match `^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$` and the resolved path must stay inside `%LOCALAPPDATA%\Kumo\updates\<version>`. |
 | Elevation | The installer is started with `ShellExecute` and no `runas`; Kumo's per-user model never needs administrator rights. |
-| Interrupting work | Installation is refused while file operations run; the user confirms "Install now" and Kumo exits normally before the installer replaces files. Settings in `%LOCALAPPDATA%\Kumo` are not touched. |
+| Interrupting work | The user starts the update with "Update" or "Get update". Once the download is checked, the installer runs with `/S /relaunch` and Kumo exits; if file operations are running, Kumo waits for "Install now" instead. The installer closes Kumo, replaces the files (rolling back on failure) and starts the new version. Settings in `%LOCALAPPDATA%\Kumo` are not touched. |
 | Interrupted download or install | Partial files are deleted on failure or cancellation; the whole download folder is removed at the next start. The installer is responsible for rolling back its own file changes. |
+
+## Trust without a signature
+
+Installers are not signed yet. Copies installed with the setup still update themselves (`InstallChecked`), a choice
+the maintainer made explicitly on 2026-10-20 in favour of one-click updates:
+
+- the setup must come from a release of the repository compiled into the build, downloaded from GitHub hosts only;
+- its SHA-256 must match `SHA256SUMS.txt` of the same release, and its product version must equal the offered version;
+- it runs per-user, without elevation, silently, and restarts Kumo.
+
+This protects against corrupted, truncated or mismatched downloads, **not** against a compromised release: anyone
+able to publish a release in the repository could ship an installer that Kumo would run. Protecting the repository
+(2FA, protected `windows/v*` tags, the approval environment for releases) is therefore part of update security.
+Once installers are signed, setting `KUMO_UPDATE_PUBLISHER` switches to `InstallVerified` and the signature check
+without code changes. Portable copies only announce updates.
 
 ## Current limitations
 
-- **The NSIS installer exists but is not signed yet**, so `InstallVerified` is never active in real builds: installer
-  and portable copies announce updates and open the release page. Signing plus `KUMO_UPDATE_PUBLISHER` turns on
-  verified self-updates without code changes.
 - Revocation checking needs network access; offline machines cannot verify an installer and will not install.
 - Release notes are shown as plain text.
 - Only the first three pages (300) of releases are read.

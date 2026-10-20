@@ -57,11 +57,12 @@ draft `windows/v0.2.0`.
 
 ## 5. Install path (signed builds only)
 
-Click **Get update**. Expected: download progress, SHA-256 verified, signature accepted, installer starts without an
-elevation prompt, Kumo restarts as `0.1.1`. Then:
+Click **Get update**. Expected: download progress, SHA-256 and version checked (and the signature, if a publisher is
+configured), the installer runs silently without an elevation prompt, and Kumo restarts as `0.1.1`. Then:
 
 - Tamper test: upload a modified `SHA256SUMS.txt` to the 0.1.1 test release; the download must be refused.
-- Unsigned test: replace the installer with an unsigned build of the same version; Kumo must refuse to run it.
+- Version test: replace the 0.1.1 installer and its checksum line with the 0.1.0 installer; Kumo must refuse to run it.
+- Signed builds only: replace the installer with an unsigned build of the same version; Kumo must refuse to run it.
 
 ## 6. Clean up
 
