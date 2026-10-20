@@ -15,7 +15,9 @@ param(
   # Fail instead of skipping when NSIS is missing; the release workflow sets this.
   [switch]$RequireInstaller,
   # Optional signing command for the installer and uninstaller, with %1 standing for the file to sign.
-  [string]$SignCommand = ""
+  [string]$SignCommand = "",
+  # Development builds only: appended as a pre-release (for example dev.42) so successive builds order correctly.
+  [string]$PrereleaseSuffix = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,6 +25,10 @@ $root = Split-Path -Parent $PSScriptRoot
 $check = & (Join-Path $PSScriptRoot "check-version.ps1")
 $version = ($check | Where-Object { $_ -like "version=*" }).Split("=")[1]
 $numeric = ($check | Where-Object { $_ -like "numeric=*" }).Split("=")[1]
+if ($PrereleaseSuffix) {
+  if ($PrereleaseSuffix -notmatch '^dev\.(0|[1-9]\d*)$') { throw "PrereleaseSuffix must look like dev.<number>." }
+  $version = if ($version.Contains("-")) { "$version.$PrereleaseSuffix" } else { "$version-$PrereleaseSuffix" }
+}
 
 $makensis = (Get-Command makensis -ErrorAction SilentlyContinue).Source
 if (-not $makensis) {
@@ -44,7 +50,8 @@ foreach ($runtime in $Runtimes) {
     "-o", $publish,
     "-p:KumoUpdateRepository=$Repository",
     "-p:KumoUpdatePublisher=$Publisher",
-    "-p:ContinuousIntegrationBuild=true"
+    "-p:ContinuousIntegrationBuild=true",
+    "-p:Version=$version"
   )
   if ($SourceRevision) { $arguments += "-p:SourceRevisionId=$SourceRevision" }
   & dotnet @arguments
