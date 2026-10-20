@@ -29,7 +29,7 @@ internal sealed class KumoApplication : Application
         Exit,
     }
 
-    private static readonly TimeSpan FirstUpdateCheckDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan FirstUpdateCheckDelay = TimeSpan.FromSeconds(10);
 
     private readonly SingleInstance _instance;
     private readonly string[] _startupArguments;
@@ -90,8 +90,11 @@ internal sealed class KumoApplication : Application
         _tray.Invoked += OpenKumo;
         _tray.NotificationClicked += () =>
         {
-            if (_announcedUpdate is { } update)
-                ShowUpdates(update);
+            if (_announcedUpdate != null)
+            {
+                _announcedUpdate = null;
+                ShowSettings("Updates");
+            }
             else if (_menu?.LastOutput is { } output)
                 OverlayController.Reveal(output);
         };
@@ -132,7 +135,7 @@ internal sealed class KumoApplication : Application
         try
         {
             var result = await _updates.Service.CheckAsync(manual: false, CancellationToken.None);
-            if (result.Release is { } release && _updates.Service.ShouldNotify(result) && Notify($"Kumo {release.Version.ToShortString()} is available", "Click to see what's new.", TrayNotificationKind.Info))
+            if (result.Release is { } release && _updates.Service.ShouldNotify(result) && Notify($"Kumo {release.Version.ToShortString()} is available", "Click to see what's new in Settings.", TrayNotificationKind.Info))
             {
                 _announcedUpdate = release;
                 _updates.Service.MarkNotified(release.Version);
@@ -373,10 +376,12 @@ internal sealed class KumoApplication : Application
         }
     }
 
-    private void ShowSettings()
+    private void ShowSettings(string? page = null)
     {
         if (_settingsWindow != null)
         {
+            if (page != null)
+                _settingsWindow.ShowPage(page);
             _settingsWindow.Activate();
             return;
         }
@@ -395,6 +400,8 @@ internal sealed class KumoApplication : Application
             }
             _settingsWindow = null;
         };
+        if (page != null)
+            _settingsWindow.ShowPage(page);
         _settingsWindow.Show();
         _settingsWindow.Activate();
     }

@@ -39,7 +39,7 @@
 
         <Border x:Name="NotesCard" Style="{StaticResource Card}" Margin="0,16,0,0" MinHeight="0" Visibility="Collapsed">
           <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
-            <TextBlock x:Name="Notes" TextWrapping="Wrap" FontSize="12" />
+            <ContentControl x:Name="Notes" Focusable="False" />
           </ScrollViewer>
         </Border>
 

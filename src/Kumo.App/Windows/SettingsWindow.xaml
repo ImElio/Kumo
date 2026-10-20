@@ -243,6 +243,27 @@
                 </StackPanel>
               </DockPanel>
             </Border>
+            <Border x:Name="WhatsNewCard" Style="{StaticResource Card}" Visibility="Collapsed" Padding="20,16">
+              <StackPanel>
+                <DockPanel>
+                  <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE789;" Foreground="{StaticResource KumoAccent}" />
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="WhatsNewTitle" FontSize="16" FontWeight="SemiBold" />
+                    <TextBlock x:Name="WhatsNewDate" Style="{StaticResource CardDescription}" />
+                  </StackPanel>
+                </DockPanel>
+                <Border Margin="36,14,0,0" Padding="16,12" CornerRadius="6" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                  <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                    <ContentControl x:Name="WhatsNewNotes" Focusable="False" />
+                  </ScrollViewer>
+                </Border>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                  <Button Content="View on GitHub" MinWidth="130" Click="OnViewOnGitHub" />
+                  <Button x:Name="GetUpdateButton" Content="Get update" MinWidth="130" Margin="8,0,0,0" Click="OnGetUpdate"
+                          Style="{DynamicResource AccentButtonStyle}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
             <Border Style="{StaticResource Card}">
               <StackPanel>
                 <DockPanel>

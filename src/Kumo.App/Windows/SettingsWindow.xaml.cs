@@ -63,7 +63,7 @@ public partial class SettingsWindow : Window
 
         _updates = updates;
         Fill(UpdateChannelBox,
-            [new("Release — Recommended", UpdateChannel.Release), new("Beta — Early access", UpdateChannel.Beta), new Choice<UpdateChannel>("Development — Experimental", UpdateChannel.Development)],
+            [new("Release (Recommended)", UpdateChannel.Release), new("Beta (Early access)", UpdateChannel.Beta), new Choice<UpdateChannel>("Development (Experimental)", UpdateChannel.Development)],
             _settings.UpdateChannel);
         AutomaticUpdates.IsChecked = _settings.AutomaticUpdateChecks;
         CurrentVersionText.Text = $"Kumo {updates.Version}";
@@ -90,9 +90,16 @@ public partial class SettingsWindow : Window
 
     private void OnStatusChanged(UpdateCheckResult status) => Dispatcher.BeginInvoke(() => ShowStatus(status));
 
+    /// <summary>Opens a section by its tag, for example "Updates" when coming from an update notification.</summary>
+    internal void ShowPage(string page)
+    {
+        Navigation.SelectedItem = Navigation.Items.OfType<ListBoxItem>().FirstOrDefault(i => (string)i.Tag == page) ?? Navigation.SelectedItem;
+    }
+
     private void ShowStatus(UpdateCheckResult status)
     {
         _offered = status.Release;
+        ShowWhatsNew(status.Status == UpdateStatus.Available ? status.Release : null);
         UpdateStatusDetail.Visibility = Visibility.Collapsed;
         UpdateActionButton.Visibility = Visibility.Visible;
         UpdateActionButton.IsEnabled = true;
@@ -122,6 +129,29 @@ public partial class SettingsWindow : Window
                 UpdateActionButton.Content = "Check for updates";
                 break;
         }
+    }
+
+    private void ShowWhatsNew(UpdateRelease? release)
+    {
+        WhatsNewCard.Visibility = release == null ? Visibility.Collapsed : Visibility.Visible;
+        if (release == null)
+            return;
+        WhatsNewTitle.Text = $"What's new in Kumo {release.Version.ToShortString()}";
+        WhatsNewDate.Text = (release.PublishedAt is { } published ? $"Published {published.LocalDateTime:D}" : "Published on GitHub")
+            + (release.Version.IsPrerelease ? " · pre-release" : string.Empty);
+        WhatsNewNotes.Content = Updates.ReleaseNotesView.Build(release.Notes);
+    }
+
+    private void OnGetUpdate(object sender, RoutedEventArgs e)
+    {
+        if (_offered is { } release)
+            _updates.ShowRelease(release);
+    }
+
+    private void OnViewOnGitHub(object sender, RoutedEventArgs e)
+    {
+        if (_offered is { PageUrl: { Scheme: "https", Host: "github.com" } page })
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(page.AbsoluteUri) { UseShellExecute = true });
     }
 
     private void OnUpdateAction(object sender, RoutedEventArgs e)

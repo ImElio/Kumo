@@ -7,9 +7,9 @@ downloaded or installed until the user asks.
 
 | Channel | Shown as | Receives from published GitHub Releases |
 | --- | --- | --- |
-| **Release** (default) | Release — Recommended | Stable versions only (`0.1.0`, `0.1.1`, `0.2.0`) |
-| **Beta** | Beta — Early access | Stable plus `beta` and `rc` pre-releases |
-| **Development** | Development — Experimental | Stable plus `beta`, `rc`, `alpha` and `dev` pre-releases |
+| **Release** (default) | Release (Recommended) | Stable versions only (`0.1.0`, `0.1.1`, `0.2.0`) |
+| **Beta** | Beta (Early access) | Stable plus `beta` and `rc` pre-releases |
+| **Development** | Development (Experimental) | Stable plus `beta`, `rc`, `alpha` and `dev` pre-releases |
 
 Within a channel Kumo picks the highest SemVer version above its own, not the most recently published release, and
 never moves to a lower version. Someone on `0.3.0-beta.2` who returns to Release while the newest stable release is

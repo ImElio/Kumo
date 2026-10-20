@@ -55,7 +55,7 @@ public partial class UpdateWindow : Window
         ShowState(MascotState.Hovering, $"Kumo {version} is available",
             $"You're currently using {_updates.Environment.CurrentVersion.ToShortString()}." + (release.Version.IsPrerelease ? " This is a beta release." : string.Empty),
             [.. actions]);
-        Notes.Text = string.IsNullOrWhiteSpace(release.Notes) ? "No release notes were published." : release.Notes.Trim();
+        Notes.Content = ReleaseNotesView.Build(release.Notes);
         NotesCard.Visibility = Visibility.Visible;
     }
 
