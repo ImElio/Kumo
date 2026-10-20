@@ -2,11 +2,16 @@
 
 Status legend: **Automated** = covered by `tools/Kumo.DragProbe` or UI Automation runs with real input;
 **Pending** = must be checked by a person on real hardware. Nothing below is marked as passed unless it was
-actually executed. Last updated 2026-10-19 on Windows 11 Pro 10.0.26200, one monitor at 100 %.
+actually executed. Last updated 2026-10-20 on Windows 11 Pro 10.0.26200, one monitor at 100 %.
 
 | Check | How | Status |
 | --- | --- | --- |
-| Drag from a File Explorer window, tap Shift, drop on an action | Probe `drop` | Automated (5 of 6 runs passed, see [interaction.md](interaction.md#verification)) |
+| Drag from a File Explorer window, tap Shift, drop on an action | Probe `drop` | Automated (14 of 14 on 2026-10-20; earlier 5 of 6, see [interaction.md](interaction.md#verification)) |
+| Quick release right after the Shift tap, 1 file and 400 files | Probes `quick`, `quickmany` | Automated: first drop after start fixed (11 of 12 accepted, previously 8 of 12); the remaining case is a release within the cold first show |
+| 100 consecutive drag-and-drop operations without restarting Kumo | Probe `drop` repeated | Pending (blocked: synthesized input refused on the test desktop) |
+| First drag after start-up with the off-screen prewarm show | Probe `quick` on fresh starts; `ms` of `Overlay activated` | Pending |
+| Drag from another Explorer window, long and Unicode paths, other drives, nested folders | | Pending |
+| Release Shift before dropping, move in and out of the ring, drag while another app has focus | | Pending |
 | Escape cancels | Probe `escape` | Automated |
 | Release elsewhere leaves files untouched | Probe `elsewhere` | Automated |
 | Holding Shift keeps Explorer's move behaviour | Probe `hold` | Automated |

@@ -70,6 +70,7 @@ interception.
 | Rest on the hub for 500 ms in a submenu | Back to the categories. |
 | Drop on an action | The drop is accepted as a copy, the action starts after `Drop` has returned to Explorer. |
 | Drop on a category or the hub | Kumo keeps the files and becomes a normal clickable, keyboard-focusable menu. |
+| Drop while "Reading files…" | Accepted anywhere on the hub or ring; the menu stays open and fills in when inspection finishes. `DragOver` and `Drop` use the same decision (`DropDecision`), because OLE calls `DragLeave` instead of `Drop` when the last `DragOver` reported no effect. |
 | Drop outside the ring | Rejected (no drop effect); the overlay closes 300 ms after the button is released. |
 | Escape during the drag | Explorer cancels its drag and the overlay closes. |
 | Click outside an interactive menu | The menu closes. During work the overlay hides and the result arrives as a notification. |
@@ -82,6 +83,32 @@ rule-of-thirds grid, aspect presets and the exact result size in pixels). It is 
 while a drag is in progress.
 
 ## Verification
+
+### Drop reliability investigation (2026-10-20)
+
+The 1-in-6 failure recorded below was investigated with real Explorer input (`Kumo.DragProbe`) and diagnostic
+logging, which now numbers each drag session.
+
+- **Root cause.** Until the dragged files were inspected, `DragOver` answered `DROPEFFECT_NONE`. When the button is
+  released over a target whose last effect was none, OLE calls `IDropTarget::DragLeave`, not `Drop`, so the drop
+  never reached Kumo and the overlay closed on release. Inspection is slowest on the first drag after start-up
+  (12–42 ms cold, under 1 ms warm), which matches the original "first drag after start-up" report. Trace of a failing
+  session: `Drag entered overlay` → `Drag ended` → `Files inspected` 30 ms later, with no `Drop` call at all.
+- **Reproduction.** Probe `quickmany` (400 files selected, release on the hub right after the Shift tap) failed the
+  first drop after every start with the previous build: 4 of 4 starts, 12 drops, 4 lost, every later drop accepted.
+- **Fix.** `DragOver` and `Drop` share `DropDecision`; while files are being read the hub and ring report Copy and a
+  drop keeps the menu open. With the fix: 4 starts, 12 drops, 11 accepted. The one remaining loss had no
+  `DragEnter` at all: the first show of the overlay took 107 ms and the button was released 30 ms after it appeared
+  without the pointer moving, so OLE never re-targeted to the overlay and Explorer received the drop (a no-op onto
+  the same folder; the source was intact).
+- **Follow-up, not verified.** Prewarm now shows the overlay once, invisibly and off screen, so that the first real
+  show should cost about the same as later ones (4–8 ms). Its effect could not be measured: after this change Windows
+  refused synthesized input on the test desktop (`SendInput` error 87), so no further real-input runs were possible.
+  It adds about 0.5 MB of private memory and 20–30 handles at idle. No window remains visible after prewarm.
+- **Not reached.** The planned 100-attempt stability run was not performed for the same reason. Before that point:
+  14 of 14 `drop` runs over 7 fresh starts and 26 of 26 `quick` and `quickmany` drops after the first of each start
+  were accepted; every run left the source file intact.
+
 
 ### Automated, real input (`tools/Kumo.DragProbe`)
 
