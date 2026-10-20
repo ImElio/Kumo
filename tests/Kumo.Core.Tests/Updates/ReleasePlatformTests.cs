@@ -149,6 +149,41 @@ public class ReleasePlatformTests
         Assert.Equal(["windows/v0.3.0", "linux/v0.3.0", "v0.2.0"], releases.Select(r => r.Tag));
     }
 
+    [Theory]
+    [InlineData("windows/v1.0.0-rc.11", "windows/v1.0.0-rc.10")]
+    [InlineData("windows/v1.0.0", "windows/v1.0.0-rc.11")]
+    [InlineData("windows/v1.0.0-rc.3", "windows/v1.0.0-rc.2")]
+    [InlineData("windows/v1.0.0-rc.1", "windows/v1.0.0-beta.10")]
+    [InlineData("windows/v0.10.0", "windows/v0.9.0")]
+    [InlineData("windows/v0.1.0", null)]
+    public void Previous_tag_follows_SemVer_precedence(string current, string? expected)
+    {
+        string[] tags =
+        [
+            "windows/v0.9.0", "windows/v1.0.0-beta.2", "windows/v1.0.0-beta.10", "windows/v1.0.0-rc.2",
+            "windows/v1.0.0-rc.10", "windows/v1.0.0", "windows/v1.0.0-rc.11", "windows/v0.10.0", "windows/v0.1.0",
+        ];
+        Assert.True(ReleaseTag.TryParse(current, out var platform, out var version));
+
+        Assert.Equal(expected, ReleaseTag.FindPrevious(platform, version, tags));
+    }
+
+    [Fact]
+    public void Previous_tag_ignores_other_platforms_and_noise()
+    {
+        string[] tags = ["linux/v1.9.0", "windows/v1.1.0", "v1.2.0", "windows/vnext", "nightly", " windows/v1.3.0 ", "windows/v2.0.0"];
+
+        Assert.Equal("windows/v1.3.0", ReleaseTag.FindPrevious(ReleasePlatform.Windows, SemVersion.Parse("2.0.0"), tags));
+        Assert.Equal("linux/v1.9.0", ReleaseTag.FindPrevious(ReleasePlatform.Linux, SemVersion.Parse("2.0.0"), tags));
+        Assert.Null(ReleaseTag.FindPrevious(ReleasePlatform.Linux, SemVersion.Parse("1.0.0"), tags));
+    }
+
+    [Fact]
+    public void Legacy_tags_count_as_previous_Windows_releases()
+    {
+        Assert.Equal("v0.1.1", ReleaseTag.FindPrevious(ReleasePlatform.Windows, SemVersion.Parse("0.2.0"), ["v0.1.1", "linux/v0.1.5"]));
+    }
+
     private static UpdateRelease Legacy(string version)
     {
         var release = Release(version);

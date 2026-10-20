@@ -38,17 +38,16 @@ jobs:
         run: ./tools/check-version.ps1 -Tag "${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       # Generated notes must start from the previous Windows release, not from whichever platform tagged last.
+      # The lookup uses Kumo's own SemVer precedence, so rc.10 follows rc.2.
       - name: Find previous Windows release
         id: previous
         shell: pwsh
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ github.ref_name }}
         run: |
-          $current = [semver]$env:VERSION
-          $previous = git tag --list "windows/v*" |
-            ForEach-Object { $v = $null; if ([semver]::TryParse($_.Substring(9), [ref]$v) -and $v -lt $current) { [pscustomobject]@{ Tag = $_; Version = $v } } } |
-            Sort-Object Version -Descending | Select-Object -First 1
-          "tag=$($previous.Tag)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          $previous = git tag --list | dotnet run --project tools/Kumo.ReleaseTool -c Release -- previous-tag $env:TAG
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          "tag=$previous" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Install NSIS
         shell: pwsh

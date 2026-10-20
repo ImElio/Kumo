@@ -43,4 +43,24 @@ public static class ReleaseTag
         }
         return SemVersion.TryParseTag(tag, out version);
     }
+
+    /// <summary>
+    /// The tag of the highest release of <paramref name="platform"/> that precedes <paramref name="version"/> by SemVer
+    /// precedence, used as the start of generated release notes. Other platforms and unparsable tags are ignored.
+    /// </summary>
+    public static string? FindPrevious(ReleasePlatform platform, SemVersion version, IEnumerable<string> tags)
+    {
+        string? previous = null;
+        SemVersion? best = null;
+        foreach (string tag in tags)
+        {
+            if (TryParse(tag.Trim(), out var tagPlatform, out var tagVersion) && tagPlatform == platform
+                && tagVersion < version && (best == null || tagVersion > best))
+            {
+                best = tagVersion;
+                previous = tag.Trim();
+            }
+        }
+        return previous;
+    }
 }
