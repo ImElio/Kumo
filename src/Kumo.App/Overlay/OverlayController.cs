@@ -168,6 +168,18 @@ internal sealed class OverlayController : IDisposable
         window.Arrange(new Rect(window.DesiredSize));
         window.UpdateLayout();
         window.Menu.ClearItems();
+
+        // Creating the HWND is not enough: the first real show of a layered window still costs 60-120 ms, long
+        // enough for a quick release to reach Explorer instead of the overlay. One invisible show off screen pays it.
+        window.Opacity = 0;
+        OverlayWindowInterop.MoveOnto(window.Handle, new ScreenPoint(-32000, -32000));
+        window.Show();
+        window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () =>
+        {
+            if (_phase == Phase.Hidden)
+                window.Hide();
+            window.Opacity = 1;
+        });
     }
 
     public void Dispose()
@@ -212,6 +224,7 @@ internal sealed class OverlayController : IDisposable
             _window.ApplyLayout(layout, palette);
         }
 
+        _window.Opacity = 1;
         _window.Menu.ReducedMotion = Theme.ReducedMotion(settings.Motion);
         _window.Menu.ClearItems();
         _window.Menu.SetRingVisible(true);
