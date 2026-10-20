@@ -48,6 +48,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a className="skip" href="#main">
           Skip to content
         </a>
+        <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true" focusable="false">
+          <filter id="ink">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.1" />
+          </filter>
+        </svg>
         <SiteHeader />
         <main id="main">{children}</main>
         <SiteFooter />

@@ -1,9 +1,8 @@
 import Landscape from "@/components/Landscape";
 import DesktopDemo from "@/components/DesktopDemo";
+import Doodle from "@/components/Doodle";
 import PlatformStatus from "@/components/PlatformStatus";
 import { links, site } from "@/lib/site";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGithub, faWindows } from "@fortawesome/free-brands-svg-icons";
 
 export default function Home() {
   return (
@@ -14,7 +13,7 @@ export default function Home() {
             <p className="eyebrow">A small utility for Windows</p>
             <h1 id="hero-title">
               Your files.
-              <br />A little easier.
+              <br />A little <span className="scribble">easier</span>.
             </h1>
             <p className="lede">
               Kumo puts everyday file actions in a radial menu that opens where you are already working. Drag files in File
@@ -22,11 +21,11 @@ export default function Home() {
             </p>
             <div className="actions" id="download">
               <a className="button button-primary" href={links.downloadX64}>
-                <FontAwesomeIcon icon={faWindows} aria-hidden="true" />
+                <Doodle name="download" size={22} accent={false} />
                 Download for Windows
               </a>
               <a className="button button-secondary" href={links.repository}>
-                <FontAwesomeIcon icon={faGithub} aria-hidden="true" />
+                <Doodle name="code" size={22} accent={false} />
                 View on GitHub
               </a>
             </div>
@@ -94,26 +93,50 @@ export default function Home() {
           <div className="feature-group">
             <h3>Images</h3>
             <dl>
-              <dt>Convert</dt>
+              <dt>
+                <Doodle name="convert" />
+                Convert
+              </dt>
               <dd>PNG, JPEG, WebP, BMP and GIF to PNG, JPEG, WebP, BMP or PDF.</dd>
-              <dt>Crop</dt>
+              <dt>
+                <Doodle name="crop" />
+                Crop
+              </dt>
               <dd>In a preview editor with handles, guides and ratios such as 1:1, 4:3 and 16:9.</dd>
-              <dt>Rotate</dt>
+              <dt>
+                <Doodle name="rotate" />
+                Rotate
+              </dt>
               <dd>90° either way, or 180°, without opening an editor.</dd>
-              <dt>Compress</dt>
+              <dt>
+                <Doodle name="compress" />
+                Compress
+              </dt>
               <dd>Smaller JPEG and WebP files; PNG compression is lossless.</dd>
             </dl>
           </div>
           <div className="feature-group">
             <h3>PDFs</h3>
             <dl>
-              <dt>Merge</dt>
+              <dt>
+                <Doodle name="merge" />
+                Merge
+              </dt>
               <dd>Combine several PDFs, or several images, into one document.</dd>
-              <dt>Split</dt>
+              <dt>
+                <Doodle name="split" />
+                Split
+              </dt>
               <dd>One file per page, or only the pages you choose.</dd>
-              <dt>Protect</dt>
+              <dt>
+                <Doodle name="protect" />
+                Protect
+              </dt>
               <dd>Save a password-protected copy.</dd>
-              <dt>To images</dt>
+              <dt>
+                <Doodle name="images" />
+                To images
+              </dt>
               <dd>Turn pages into PNG or JPEG.</dd>
             </dl>
           </div>
@@ -134,12 +157,18 @@ export default function Home() {
 
         <div className="principles">
           <p>
-            <strong>Your files stay on your PC.</strong>
+            <strong>
+              <Doodle name="home" />
+              Your files stay on your PC.
+            </strong>
             Everything is processed locally and nothing is uploaded. Kumo never overwrites an original; it writes new files
             beside it, or to a folder you choose.
           </p>
           <p>
-            <strong>Not there yet.</strong>
+            <strong>
+              <Doodle name="hourglass" />
+              Not there yet.
+            </strong>
             Video, audio, HEIC, TIFF, Word documents, PDF text extraction and image resizing are not supported in this
             version.
           </p>
@@ -155,6 +184,7 @@ export default function Home() {
           </p>
           <p>
             <a className="text-link" href={links.repository}>
+              <Doodle name="heart" size={22} />
               {links.repositoryLabel}
             </a>
           </p>
