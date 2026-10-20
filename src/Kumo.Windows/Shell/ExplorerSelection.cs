@@ -31,7 +31,9 @@ public static unsafe partial class ExplorerSelection
             {
                 completion.TrySetResult(Read(foreground));
             }
-            catch (Exception ex) when (ex is COMException or InvalidCastException or InvalidComObjectException or Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+            // This runs on its own thread, where any escaping exception would end the process; a failed
+            // read must only mean "nothing selected".
+            catch (Exception)
             {
                 completion.TrySetResult([]);
             }
@@ -77,7 +79,7 @@ public static unsafe partial class ExplorerSelection
     {
         object location = 0;
         object empty = Type.Missing;
-        windows.FindWindowSW(ref location, ref empty, SWC_DESKTOP, out _, SWFO_NEEDDISPATCH, out object? desktop);
+        object? desktop = windows.FindWindowSW(ref location, ref empty, SWC_DESKTOP, out _, SWFO_NEEDDISPATCH);
         return desktop == null ? [] : SelectedPaths(desktop);
     }
 
@@ -201,13 +203,13 @@ public static unsafe partial class ExplorerSelection
         object? Item([MarshalAs(UnmanagedType.Struct)] object index);
 
         [DispId(0x60020007)]
-        void FindWindowSW(
+        [return: MarshalAs(UnmanagedType.IDispatch)]
+        object? FindWindowSW(
             [MarshalAs(UnmanagedType.Struct)] ref object location,
             [MarshalAs(UnmanagedType.Struct)] ref object locationRoot,
             int windowClass,
             out int hwnd,
-            int options,
-            [MarshalAs(UnmanagedType.IDispatch)] out object? dispatch);
+            int options);
     }
 
     [ComImport]
