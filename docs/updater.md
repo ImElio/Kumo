@@ -48,10 +48,11 @@ and a snoozed version with its date. Nothing else.
 ## Status shown in Settings
 
 Settings → Updates follows the update service: "Kumo hasn't checked for updates yet", "Checking for updates…",
-"Kumo is up to date." (or the pre-release explanation above), "Kumo 0.2.0-beta.1 is available." with **View update**,
+"Kumo is up to date." (or the pre-release explanation above), "Kumo 0.2.0-beta.1 is available." with **See what's new**,
 a short failure message ("Couldn't check for updates. Try again later."), or "Updates managed by Microsoft Store.".
-Downloading and ready-to-install states appear in the update window, and only for installations that may install
-verified updates. The installation source reads Microsoft Store, GitHub (Kumo's installer), Portable, or Unknown
+**See what's new** (and the update notification's What's new) opens the update window as a resizable What's new
+window: the full release notes with headings, lists, links and screenshots hosted by GitHub, and Later, View on GitHub
+and Update. Downloading and installing continue in the same window, only for installations that may install updates. The installation source reads Microsoft Store, GitHub (Kumo's installer), Portable, or Unknown
 (an MSIX package from outside the Store).
 
 ## Notifications

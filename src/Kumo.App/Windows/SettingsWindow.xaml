@@ -243,17 +243,6 @@
                 </StackPanel>
               </DockPanel>
             </Border>
-            <Border x:Name="WhatsNewCard" Style="{StaticResource Card}" Visibility="Collapsed">
-              <DockPanel>
-                <TextBlock Style="{StaticResource CardGlyph}" Text="&#xE789;" Foreground="{StaticResource KumoAccent}" />
-                <Button Content="See what's new" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="130"
-                        Click="OnSeeWhatsNew" Style="{DynamicResource AccentButtonStyle}" />
-                <StackPanel VerticalAlignment="Center">
-                  <TextBlock x:Name="WhatsNewTitle" Style="{StaticResource CardTitle}" />
-                  <TextBlock x:Name="WhatsNewDate" Style="{StaticResource CardDescription}" />
-                </StackPanel>
-              </DockPanel>
-            </Border>
             <Border Style="{StaticResource Card}">
               <StackPanel>
                 <DockPanel>

@@ -99,7 +99,6 @@ public partial class SettingsWindow : Window
     private void ShowStatus(UpdateCheckResult status)
     {
         _offered = status.Release;
-        ShowWhatsNew(status.Status == UpdateStatus.Available ? status.Release : null);
         UpdateStatusDetail.Visibility = Visibility.Collapsed;
         UpdateActionButton.Visibility = Visibility.Visible;
         UpdateActionButton.IsEnabled = true;
@@ -118,7 +117,7 @@ public partial class SettingsWindow : Window
                 UpdateStatusText.Text = status.Message;
                 UpdateStatusDetail.Text = $"You're using {_updates.Version}.";
                 UpdateStatusDetail.Visibility = Visibility.Visible;
-                UpdateActionButton.Content = "View update";
+                UpdateActionButton.Content = "See what's new";
                 break;
             case UpdateStatus.UpToDate or UpdateStatus.Failed:
                 UpdateStatusText.Text = status.Message;
@@ -129,22 +128,6 @@ public partial class SettingsWindow : Window
                 UpdateActionButton.Content = "Check for updates";
                 break;
         }
-    }
-
-    private void ShowWhatsNew(UpdateRelease? release)
-    {
-        WhatsNewCard.Visibility = release == null ? Visibility.Collapsed : Visibility.Visible;
-        if (release == null)
-            return;
-        WhatsNewTitle.Text = $"What's new in Kumo {release.Version.ToShortString()}";
-        WhatsNewDate.Text = (release.PublishedAt is { } published ? string.Create(System.Globalization.CultureInfo.GetCultureInfo("en-US"), $"Published {published.LocalDateTime:MMMM d, yyyy}") : "Published on GitHub")
-            + (release.Version.IsPrerelease ? " · pre-release" : string.Empty);
-    }
-
-    private void OnSeeWhatsNew(object sender, RoutedEventArgs e)
-    {
-        if (_offered is { } release)
-            _updates.ShowRelease(release);
     }
 
     private void OnUpdateAction(object sender, RoutedEventArgs e)
