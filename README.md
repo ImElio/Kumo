@@ -1,167 +1,91 @@
 # Kumo
 
-<img src="assets/icons/kumo-256.png" alt="Kumo, a small cloud with an orange scarf" width="112" />
+<p align="center">
+  <img src="assets/github/banner.png" alt="Kumo, a cloud mascot above soft clouds" width="100%" />
+</p>
 
-Kumo is a small Windows utility for everyday file chores. It waits quietly in the notification area; when you
-drag files out of File Explorer and tap **Shift**, a radial menu appears under the pointer. Move onto an action,
-let go, and the result is saved next to the original.
+Kumo puts common file actions in a radial menu on Windows. Start dragging files in File Explorer or on the desktop,
+tap **Shift** while holding the mouse button, then move to an action and release.
 
-Everything runs locally. Kumo has no account, no telemetry and no advertising. Your files never leave your computer;
-the only network request is an optional, at most daily check of the project's GitHub Releases for a new version.
+## What it does
 
-> Status: early development (0.1). The core interaction and file operations work and are covered by automated
-> tests, but Kumo has not yet been validated on a wide range of machines. See [Known limitations](#known-limitations).
+**Images:** convert PNG, JPEG, WebP, BMP and GIF (first frame) to PNG, JPEG, WebP, BMP or PDF; crop, rotate, and
+compress JPEG/WebP. PNG compression is lossless. Transparency is placed on white when saving to JPEG or BMP.
 
-## Requirements
+**PDFs:** convert pages to PNG or JPEG, combine images into a PDF, merge PDFs, split a PDF into one file per page,
+extract selected pages, or create a password-protected copy. PDF pages are rasterized at 150 DPI when converted to
+images.
 
-- Windows 10 version 2004 (build 19041) or later, x64. So far developed and tested on Windows 11 (build 26200).
-- Nothing else: release builds include the .NET 10 runtime. Building from source needs the .NET 10 SDK.
-- No administrator rights.
+Video, audio, HEIC, TIFF, Word documents, PDF text extraction and image resizing are not supported yet.
 
-## Using Kumo
+## Files stay on your PC
 
-1. Start `Kumo.exe`. Nothing opens; a cloud icon appears in the notification area and a one-time notification
-   explains the gesture.
-2. In File Explorer or on the desktop, start dragging one or more files.
-3. While still holding the mouse button, **tap Shift** (press and release it quickly).
-4. The radial menu opens around the pointer, showing only actions that work for the files you are dragging.
-5. Move onto an action and release the mouse button. Resting on a category such as **Convert** for a moment
-   opens its formats in the same circle; resting on the centre goes back.
-6. Kumo shows progress in the centre of the circle, then a short result with a **Show** button that opens the
-   folder with the new file selected.
+Kumo processes files locally and never uploads them. It does not overwrite originals; results are written as new files
+beside the source or to an output folder you choose. If automatic update checks are enabled, Kumo contacts GitHub to
+look for a newer version; that check does not send file contents or paths.
 
-Holding Shift for the whole drag keeps File Explorer's normal "move" behaviour; only a quick tap opens Kumo.
-A "Hold Shift" mode is available in Settings for people who prefer it. See [docs/interaction.md](docs/interaction.md)
-for the reasoning and the technical details.
+## Use
 
-Other ways in, all leading to the same menu:
+- **Drag menu:** drag files from File Explorer or the desktop, tap Shift, choose an action, then release.
+- **Keyboard:** press **Ctrl+Alt+K** to open the menu for the current selection. The shortcut can be changed in Settings.
+- **Tray:** open Kumo from the notification-area icon and select files.
 
-- **Ctrl+Alt+K** (configurable) opens the menu for the files selected in the active File Explorer window or on the
-  desktop.
-- **Open Kumo…** in the tray menu (or a left click on the icon) lets you pick files.
-- Dropping files on the centre of the circle, or on a category, keeps them in Kumo so you can choose with the mouse
-  or keyboard.
-- Launching `Kumo.exe file1 file2 …` while Kumo is running opens the menu for those files, so it works with a
-  "Send to" shortcut.
-
-### Keyboard and accessibility
-
-When Kumo owns the interaction (shortcut, tray, or after a drop), the arrow keys move between segments, Enter or
-Space chooses, Backspace goes back and Escape goes back or closes. Every segment is a real button with a
-screen-reader name (verified through UI Automation), and status changes are raised as a live region; a full
-pass with Narrator is still on the validation list. Kumo follows high-contrast themes, the Windows animation
-setting (reduced motion), light and dark mode, and per-monitor display scaling.
-
-## What Kumo can do
-
-| Files | Action | Result |
-| --- | --- | --- |
-| PNG, JPG, WEBP, BMP, GIF (first frame) | **Convert** to PNG, JPG, WEBP, BMP or PDF | New file in the chosen format. Transparency is placed on white for JPG and BMP. Camera orientation is applied. |
-| Images | **Crop** by hand | A preview window opens with a crop frame: drag corners, edges or the whole frame, or draw a new one; aspect presets Free, Original, 1:1, 4:3, 3:2, 16:9. The area is cut at full resolution; a batch gets the same area relative to each image. Same format; GIF results are saved as PNG. |
-| JPG, WEBP | **Compress**: High quality, Balanced or Smallest | Re-encoded copy. If it would not be smaller, nothing is saved. |
-| PNG | **Compress** (lossless optimisation) | Maximum PNG compression without changing pixels. |
-| Images | **Rotate** 90° right, 90° left or 180° | Rotated copy. JPG files are re-encoded at quality 92. |
-| Two or more images | **Combine into PDF** | One A4 page per image, sorted by file name. |
-| PDF | **Convert** to PNG or JPG | One image per page at 150 DPI, rendered by the PDF engine built into Windows. |
-| Two or more PDFs | **Merge PDFs** | One document, sorted by file name the way File Explorer sorts. |
-| PDF | **Split** | One PDF per page in a new folder. |
-| PDF | **Extract** pages | A copy containing the pages you type, for example `1-3, 5, 8-`. |
-| PDF | **Protect** with a password | An AES-256 encrypted copy. |
-
-Safety rules that apply to every action:
-
-- Originals are never overwritten. If a result name exists, Kumo adds a number (configurable to replace an older
-  result, but never an original or a file written in the same batch).
-- Results are written to a hidden temporary file and only renamed into place when complete, so cancelled or failed
-  work leaves nothing behind.
-- File types are detected from their content, not their extension.
-- Oversized inputs (over 1 GB, over 200 megapixels, PDFs over 5,000 pages) are refused before decoding, which also
-  protects against decompression bombs.
-- Each file in a batch succeeds or fails on its own; at most 1–4 files are processed at once (default 2).
-- Locked files, missing permissions, full disks, damaged files and password-protected PDFs produce short,
-  specific messages.
-- "Keep original files" can be turned off; originals then go to the Recycle Bin after a successful result.
-
-Not supported yet: DOCX, audio, video, TIFF, HEIC, resizing by scale, and PDF text extraction.
+Kumo never overwrites an original. By default it keeps originals; Settings can move them to the Recycle Bin after a
+successful operation. When an output name already exists, Kumo adds a number unless you choose to replace an older
+result.
 
 ## Updates
 
-Kumo can tell you when a new version is published on GitHub (Settings → Updates: Release, Beta or Development
-channel, automatic checks on or off, "Check for updates"). Today it announces the update and opens the release page; installing updates
-through the NSIS installer is built and tested but stays off until releases are code-signed. Store copies are updated by the Microsoft
-Store. Local builds never check. Details: [versioning](docs/versioning.md), [releases](docs/releases.md),
-[updater](docs/updater.md), [distribution](docs/distribution.md).
+Choose **Release**, **Beta** or **Development** in Settings. Beta includes beta and release-candidate builds;
+Development also includes alpha and dev builds. A source build has no update feed configured.
 
-## Settings
+## Screenshots
 
-Right-click the tray icon → **Settings**: start with Windows, theme, notifications, activation mode (tap Shift,
-hold Shift, off), menu size, motion, keyboard shortcut, output folder, keeping originals, name collisions,
-files processed at once, and diagnostic logging.
+### Radial menu
 
-Settings are stored in `%LOCALAPPDATA%\Kumo\settings.json` (written atomically). Logs are JSON lines in
-`%LOCALAPPDATA%\Kumo\logs`, kept for seven days; file paths only appear when detailed logging is enabled.
-"Start with Windows" is a per-user `HKCU\…\Run` entry and is off until you turn it on.
+<p align="center">
+  <img src="assets/github/example1.png" alt="Kumo's radial menu open on the Windows desktop, with Convert, Rotate, Crop and Compress actions" width="85%" />
+</p>
 
-## Building
+The menu opens over the current selection. Its actions depend on the selected files; this example shows the image
+actions available for one image.
 
-Requires the .NET 10 SDK (10.0.400 or later) on Windows.
+### Crop editor
+
+<p align="center">
+  <img src="assets/github/example2.png" alt="Crop editor showing a strawberry photo, crop handles, composition guides and aspect ratio presets" width="85%" />
+</p>
+
+Drag the crop frame's edges or corners, or choose a preset ratio such as 1:1, 4:3 or 16:9. Kumo saves the crop as a
+new image and leaves the original untouched.
+
+## For developers
+
+Kumo is a C#/.NET 10 Windows desktop app. The UI is WPF; image and PDF operations are kept separate from the shell
+integration:
+
+- `Kumo.Core` — file and operation models, settings, and shared logic.
+- `Kumo.Operations` — image processing with SkiaSharp and PDF operations with PDFsharp and Windows' PDF renderer.
+- `Kumo.Windows` — Explorer, tray, hotkey, input and other Windows integration.
+- `Kumo.App` — WPF interface and application lifecycle.
+
+Builds target Windows 10 version 2004 or later. Release installers support x64 and ARM64; the per-user installer
+does not need administrator rights. Building requires Windows and the .NET 10 SDK (10.0.400 or later, selected by
+`global.json`).
 
 ```powershell
-dotnet build Kumo.slnx
-dotnet test Kumo.slnx
+dotnet build Kumo.slnx -c Release
+dotnet test Kumo.slnx -c Release
 dotnet run --project src/Kumo.App
 ```
 
-Release output (self-contained, about 170 MB; `tools/package-release.ps1` builds the installer from it):
+CI runs formatting checks, version validation, build and tests on Windows. To prepare a release installer locally,
+use `tools/package-release.ps1`; it requires NSIS 3 and builds self-contained installers for x64 and ARM64.
 
-```powershell
-dotnet publish src/Kumo.App -c Release -r win-x64 --self-contained true -o artifacts/publish
-```
-
-Release packages (NSIS installers and `SHA256SUMS.txt` for x64 and Arm64; they need
-[NSIS 3](https://nsis.sourceforge.io)):
-
-```powershell
-./tools/package-release.ps1
-```
-
-`tools/Kumo.AssetGen` turns the mascot artwork in `assets/mascot/kumo-<state>.svg` into the images embedded in the app, the state sheet and `kumo.ico`.
-`tools/Kumo.DragProbe` drives real drags out of File Explorer to verify the integration end to end; it moves the
-pointer for a few seconds (see [docs/interaction.md](docs/interaction.md#verification)).
-
-## Project layout
-
-| Path | Contents |
-| --- | --- |
-| `src/Kumo.Core` | File type detection, operation contracts and executor, output naming and atomic writes, radial menu model, settings, logging. No UI or Win32 dependencies. |
-| `src/Kumo.Operations` | Image operations (SkiaSharp) and PDF operations (PDFsharp, Windows.Data.Pdf). |
-| `src/Kumo.Windows` | Win32 and shell interop: global input hook, tray icon, hotkey, single instance, autostart, Explorer selection, Recycle Bin, overlay window placement. |
-| `src/Kumo.App` | The WPF application: lifecycle, radial overlay, mascot, settings and dialogs. |
-| `tests/` | xUnit tests for each library. |
-| `tools/` | Asset generator and the Explorer drag probe. |
-| `docs/` | [Architecture](docs/architecture.md), [interaction](docs/interaction.md), [performance](docs/performance.md), [manual validation](docs/manual-validation.md), [roadmap](docs/roadmap.md). |
-
-## Performance
-
-Measured on the Release build (details and method in [docs/performance.md](docs/performance.md)):
-
-- Idle: about 15 MB private working set, no measurable CPU (0–31 ms of CPU time over 60 s), no timers or polling.
-- Ready for input about 0.2 s after launch; the menu appears in about 10 ms (about 95 ms the very first time).
-- A 12-megapixel JPG converts to WEBP in about 0.5 s.
-
-## Known limitations
-
-- The drag gesture only starts from File Explorer windows and the desktop. Drags from other applications are not
-  intercepted; use the shortcut or the tray instead.
-- Drags from applications running as administrator cannot be dropped on Kumo (Windows blocks drops from elevated
-  processes into normal ones).
-- While the menu is open it covers the area around the pointer.
-- Drags from the desktop, the shortcut on a desktop selection, multiple monitors with mixed scaling, pen/touch
-  drags, Remote Desktop and Explorer restarts have not yet been validated by hand. See [docs/manual-validation.md](docs/manual-validation.md).
-- English only.
-- The per-user NSIS installer is not code-signed yet, so Windows SmartScreen warns about an unknown publisher.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and contribution guidance, and [SECURITY.md](SECURITY.md) for
+private vulnerability reports.
 
 ## License
 
-Kumo is released under the [MIT License](LICENSE). Third-party components keep their own licenses; see
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Kumo is licensed under the [MIT License](LICENSE). See [third-party notices](THIRD-PARTY-NOTICES.md) for the
+licenses of components redistributed with the Windows installers.
