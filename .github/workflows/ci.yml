@@ -41,6 +41,13 @@ jobs:
       - name: Test
         run: dotnet test Kumo.slnx -c Release --no-build
 
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue) -and -not (Test-Path "${env:ProgramFiles(x86)}\NSIS\makensis.exe")) {
+            choco install nsis --yes --no-progress
+          }
+
       # Development builds are versioned <version>-dev.<run number>+<sha>, so later builds always sort higher. They
       # carry no update repository, never check for updates and are never published as releases.
       - name: Package development build

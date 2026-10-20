@@ -135,8 +135,10 @@ public sealed class PdfOperationTests : IDisposable
         Assert.Equal(2, result.Outputs.Count());
         Assert.Equal("slides (images)", Path.GetFileName(Path.GetDirectoryName(result.Outputs.First())));
         using var page = SKBitmap.Decode(result.Outputs.First());
-        Assert.InRange(page.Width, 1230, 1250);
-        Assert.InRange(page.Height, 1745, 1760);
+        // PDFsharp uses the system's default paper size for this fixture: A4 on some machines, Letter on others.
+        bool isA4 = page.Width is >= 1230 and <= 1250 && page.Height is >= 1745 and <= 1760;
+        bool isLetter = page.Width is >= 1260 and <= 1285 && page.Height is >= 1635 and <= 1665;
+        Assert.True(isA4 || isLetter, $"Expected an A4 or Letter page at 150 DPI, got {page.Width}×{page.Height}.");
         var blue = page.GetPixel((int)(140 * 150 / 72.0), (int)(90 * 150 / 72.0));
         Assert.True(blue.Blue > blue.Red, $"Expected the drawn rectangle, got {blue}.");
     }
