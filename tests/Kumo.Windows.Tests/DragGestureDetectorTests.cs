@@ -157,6 +157,45 @@ public class DragGestureDetectorTests
     }
 
     [Fact]
+    public void A_new_drag_after_an_escaped_one_activates_again()
+    {
+        var detector = StartDrag();
+        detector.OnKey(VirtualKeys.LeftShift, true, 1000, None);
+        detector.OnKey(VirtualKeys.LeftShift, false, 1080, None);
+        Assert.Equal(GestureSignal.Escape, detector.OnKey(VirtualKeys.Escape, true, 1200, None));
+        Assert.Equal(GestureSignal.DragEnded, detector.OnButtonUp());
+
+        detector.OnButtonDown(new ScreenPoint(300, 300), shellSurface: true, shiftDown: false);
+        Assert.Equal(GestureSignal.DragStarted, detector.OnMove(new ScreenPoint(320, 300), None));
+        detector.OnKey(VirtualKeys.LeftShift, true, 2000, None);
+        Assert.Equal(GestureSignal.Activate, detector.OnKey(VirtualKeys.LeftShift, false, 2090, None));
+    }
+
+    [Fact]
+    public void A_duplicate_button_up_reports_the_end_only_once()
+    {
+        var detector = StartDrag();
+
+        Assert.Equal(GestureSignal.DragEnded, detector.OnButtonUp());
+        Assert.Equal(GestureSignal.None, detector.OnButtonUp());
+    }
+
+    [Fact]
+    public void Shift_released_after_the_drop_does_not_leak_into_the_next_drag()
+    {
+        var detector = StartDrag();
+        detector.OnKey(VirtualKeys.LeftShift, true, 1000, None);
+        detector.OnButtonUp();
+        Assert.Equal(GestureSignal.None, detector.OnKey(VirtualKeys.LeftShift, false, 1050, None));
+
+        detector.OnButtonDown(new ScreenPoint(100, 100), shellSurface: true, shiftDown: false);
+        detector.OnMove(new ScreenPoint(120, 100), None);
+        Assert.Equal(GestureSignal.None, detector.OnKey(VirtualKeys.LeftShift, false, 1100, None));
+        detector.OnKey(VirtualKeys.LeftShift, true, 1200, None);
+        Assert.Equal(GestureSignal.Activate, detector.OnKey(VirtualKeys.LeftShift, false, 1260, None));
+    }
+
+    [Fact]
     public void Plain_click_does_not_report_drag_end()
     {
         var detector = new DragGestureDetector(4, 4);

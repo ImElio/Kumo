@@ -7,6 +7,7 @@ namespace Kumo.Windows.Input;
 
 public enum InputSignal
 {
+    DragStarted,
     Activate,
     DragEnded,
     Escape,
@@ -237,6 +238,9 @@ public sealed unsafe class GlobalDragMonitor : IDisposable
     {
         switch (signal)
         {
+            case GestureSignal.DragStarted:
+                _sink(new InputEvent(InputSignal.DragStarted, point));
+                break;
             case GestureSignal.Activate:
                 _sink(new InputEvent(InputSignal.Activate, point));
                 break;

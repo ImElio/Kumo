@@ -57,6 +57,9 @@ internal sealed class RadialMenuView : Canvas
 
     public RadialHit HitTest(Point point) => _layout.HitTest(point, _segments.Count);
 
+    /// <summary>Whether the point is on the hub or the ring's disk, whether or not segments are shown yet.</summary>
+    public bool IsOverMenu(Point point) => _layout.HitTest(point, 1).Kind != RadialHitKind.Outside;
+
     public void Restyle(RadialLayout layout, Palette palette)
     {
         _layout = layout;

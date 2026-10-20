@@ -70,6 +70,7 @@ internal sealed class OverlayController : IDisposable
     private bool _filesFromCurrentDrag;
     private bool _dropAccepted;
     private int _loadGeneration;
+    private int _session;
     private Job? _attachedJob;
 
     public OverlayController(KumoApplication app, IFileOperationRegistry registry, IOperationExecutor executor, IFileTypeResolver resolver)
@@ -94,7 +95,12 @@ internal sealed class OverlayController : IDisposable
                 OpenForDrag(input.Position);
                 break;
 
+            case InputSignal.DragStarted:
+                _app.Log.Debug("Drag detected");
+                break;
+
             case InputSignal.DragEnded:
+                _app.Log.Debug("Drag ended", ("session", _session), ("phase", _phase.ToString()), ("dropAccepted", _dropAccepted));
                 if (_phase is Phase.AwaitingFiles or Phase.Menu && _window is { IsInteractive: false })
                 {
                     _dismissTimer.Interval = DropGrace;
@@ -243,17 +249,18 @@ internal sealed class OverlayController : IDisposable
     {
         long started = Stopwatch.GetTimestamp();
         var window = Prepare(point);
+        _session++;
         _phase = Phase.AwaitingFiles;
         window.SetStatus("Reading files…");
         window.ShowAt(point);
         _app.SetPointerTracking(false);
-        _app.Log.Info("Overlay activated", ("x", point.X), ("y", point.Y), ("ms", Stopwatch.GetElapsedTime(started).TotalMilliseconds));
+        _app.Log.Info("Overlay activated", ("session", _session), ("x", point.X), ("y", point.Y), ("ms", Stopwatch.GetElapsedTime(started).TotalMilliseconds));
         _app.ConsiderUpdateCheck();
     }
 
     private void OnDragEnter(object sender, DragEventArgs e)
     {
-        _app.Log.Debug("Drag entered overlay", ("phase", _phase.ToString()), ("filesKnown", _filesFromCurrentDrag));
+        _app.Log.Debug("Drag entered overlay", ("session", _session), ("phase", _phase.ToString()), ("filesKnown", _filesFromCurrentDrag));
         _dismissTimer.Stop();
         if (!_filesFromCurrentDrag && _phase is Phase.AwaitingFiles or Phase.Menu)
         {
@@ -266,25 +273,36 @@ internal sealed class OverlayController : IDisposable
     private void OnDragOver(object sender, DragEventArgs e)
     {
         e.Handled = true;
-        e.Effects = DragDropEffects.None;
+        var (hit, outcome) = DropTarget(e);
+        e.Effects = outcome == DropOutcome.Reject ? DragDropEffects.None : DragDropEffects.Copy;
         if (_window == null || _phase != Phase.Menu || _model is not { IsEmpty: false })
             return;
 
-        var hit = _window.Menu.Highlight(_window.Menu.HitTest(e.GetPosition(_window.Menu)));
+        _window.Menu.Highlight(hit);
         _window.Menu.Hub.MascotState = hit.Kind == RadialHitKind.Segment ? MascotState.Hovering : MascotState.Dragging;
-        if (hit.Kind == RadialHitKind.Outside)
-        {
-            _dwell.Cancel();
-            return;
-        }
-
-        e.Effects = DragDropEffects.Copy;
         if (hit.Kind == RadialHitKind.Segment && _model.Items[hit.Index].OpensSubmenu)
             _dwell.Start(hit, CategoryDwell, () => Invoke(hit.Index, fromDrop: false));
         else if (hit.Kind == RadialHitKind.Hub && !_model.IsAtRoot)
             _dwell.Start(hit, BackDwell, () => GoBack());
         else
             _dwell.Cancel();
+    }
+
+    /// <summary>
+    /// The single answer used by both DragOver and Drop. OLE only calls Drop if the last DragOver reported an effect,
+    /// so the two must agree; in particular the menu must report Copy while the dragged files are still being read,
+    /// or a quick release turns into DragLeave and the gesture is lost.
+    /// </summary>
+    private (RadialHit Hit, DropOutcome Outcome) DropTarget(DragEventArgs e)
+    {
+        if (_window == null)
+            return (RadialHit.Outside, DropOutcome.Reject);
+        var position = e.GetPosition(_window.Menu);
+        bool filesReady = _model != null;
+        var hit = filesReady
+            ? _window.Menu.HitTest(position)
+            : _window.Menu.IsOverMenu(position) ? RadialHit.Hub : RadialHit.Outside;
+        return (hit, DropDecision.Decide(_phase == Phase.Menu, filesReady, _model is { IsEmpty: false }, hit.Kind));
     }
 
     private void OnDragLeave(object sender, DragEventArgs e)
@@ -303,24 +321,22 @@ internal sealed class OverlayController : IDisposable
         e.Handled = true;
         e.Effects = DragDropEffects.None;
         _dwell.Cancel();
-        if (_window == null || _phase != Phase.Menu || _model is not { IsEmpty: false })
+        var (hit, outcome) = DropTarget(e);
+        bool filesReady = _model != null;
+        if (outcome == DropOutcome.Reject)
         {
-            _app.Log.Debug("Drop rejected", ("phase", _phase.ToString()), ("menuReady", _model is { IsEmpty: false }));
+            _app.Log.Debug("Drop rejected", ("session", _session), ("phase", _phase.ToString()), ("filesReady", filesReady), ("hit", hit.Kind.ToString()));
             return;
         }
-
-        var hit = _window.Menu.HitTest(e.GetPosition(_window.Menu));
-        if (hit.Kind == RadialHitKind.Outside)
-            return;
 
         _dropAccepted = true;
         _dismissTimer.Stop();
         e.Effects = DragDropEffects.Copy;
-        _app.Log.Info("Drop accepted", ("files", _files.Count), ("target", hit.Kind.ToString()));
-        if (hit.Kind == RadialHitKind.Segment)
-            _window.Dispatcher.BeginInvoke(DispatcherPriority.Normal, () => Invoke(hit.Index, fromDrop: true));
+        _app.Log.Info("Drop accepted", ("session", _session), ("files", _files.Count), ("target", hit.Kind.ToString()), ("filesReady", filesReady));
+        if (outcome == DropOutcome.InvokeSegment)
+            _window!.Dispatcher.BeginInvoke(DispatcherPriority.Normal, () => Invoke(hit.Index, fromDrop: true));
         else
-            _window.Dispatcher.BeginInvoke(DispatcherPriority.Normal, EnterClickMode);
+            _window!.Dispatcher.BeginInvoke(DispatcherPriority.Normal, EnterClickMode);
     }
 
     private void OnDropGraceElapsed()
@@ -371,6 +387,7 @@ internal sealed class OverlayController : IDisposable
     private async void BeginLoading(IReadOnlyList<string> paths, bool focusFirst)
     {
         int generation = ++_loadGeneration;
+        long started = Stopwatch.GetTimestamp();
         _phase = Phase.Menu;
         _model = null;
         var window = _window!;
@@ -403,7 +420,7 @@ internal sealed class OverlayController : IDisposable
 
         _files = files;
         _model = new RadialMenuModel(_registry.EntriesFor(files));
-        _app.Log.Debug("Files inspected", ("files", files.Count), ("kinds", string.Join(",", files.Select(f => f.Kind).Distinct())));
+        _app.Log.Debug("Files inspected", ("session", _session), ("ms", Stopwatch.GetElapsedTime(started).TotalMilliseconds), ("files", files.Count), ("kinds", string.Join(",", files.Select(f => f.Kind).Distinct())));
         if (_model.IsEmpty)
         {
             ShowUnavailable(Summaries.Unavailable(files, hadFolders));
@@ -661,7 +678,7 @@ internal sealed class OverlayController : IDisposable
         _model = null;
         _filesFromCurrentDrag = false;
         _app.SetPointerTracking(false);
-        _app.Log.Info("Overlay dismissed", ("reason", reason));
+        _app.Log.Info("Overlay dismissed", ("session", _session), ("reason", reason));
     }
 
     private void DetachJob()
