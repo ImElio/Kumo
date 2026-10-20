@@ -20,6 +20,17 @@
     <AssemblyMetadata Include="KumoUpdatePublisher" Value="$(KumoUpdatePublisher)" />
   </ItemGroup>
 
+  <!-- Builds meant for public download must know where their updates come from; an empty value would leave every
+       user on that version without update notices. Local and CI development builds leave KumoPublicRelease unset. -->
+  <Target Name="ValidatePublicReleaseConfiguration" BeforeTargets="CoreCompile" Condition="'$(KumoPublicRelease)' == 'true'">
+    <Error Condition="'$(Configuration)' != 'Release'" Text="Public release builds must use the Release configuration." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(KumoUpdateRepository)', '^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9._-]{1,100}$'))"
+           Text="Public release builds need KumoUpdateRepository set to the owner/name of the GitHub repository that publishes updates." />
+    <Error Condition="$(Version.Contains('-dev'))" Text="Development versions ($(Version)) are never published." />
+    <Warning Condition="'$(KumoUpdatePublisher)' == ''"
+             Text="KumoUpdatePublisher is empty: this build will report updates but never install them by itself (installers are not signed yet)." />
+  </Target>
+
   <ItemGroup>
     <Resource Include="Mascot\Images\*.png" />
     <Content Include="..\..\assets\icons\kumo.ico" Link="kumo.ico" CopyToOutputDirectory="PreserveNewest" />

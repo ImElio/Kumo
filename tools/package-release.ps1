@@ -14,6 +14,8 @@ param(
   [string]$OutDir = "artifacts/release",
   # Fail instead of skipping when NSIS is missing; the release workflow sets this.
   [switch]$RequireInstaller,
+  # Build for public download: the build fails unless the update repository is configured.
+  [switch]$PublicRelease,
   # Optional signing command for the installer and uninstaller, with %1 standing for the file to sign.
   [string]$SignCommand = "",
   # Development builds only: appended as a pre-release (for example dev.42) so successive builds order correctly.
@@ -22,6 +24,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
+if ($PublicRelease -and $PrereleaseSuffix) { throw "Development builds are never public releases." }
 $check = & (Join-Path $PSScriptRoot "check-version.ps1")
 $version = ($check | Where-Object { $_ -like "version=*" }).Split("=")[1]
 $numeric = ($check | Where-Object { $_ -like "numeric=*" }).Split("=")[1]
@@ -53,6 +56,7 @@ foreach ($runtime in $Runtimes) {
     "-p:ContinuousIntegrationBuild=true",
     "-p:Version=$version"
   )
+  if ($PublicRelease) { $arguments += "-p:KumoPublicRelease=true" }
   if ($SourceRevision) { $arguments += "-p:SourceRevisionId=$SourceRevision" }
   & dotnet @arguments
   if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed for $runtime." }
