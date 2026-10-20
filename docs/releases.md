@@ -2,15 +2,23 @@
 
 ## Channels
 
-| Channel | Who | Receives |
+Chosen in Settings → Updates → Update channel. The choice is saved immediately and triggers a fresh check; nothing is
+downloaded or installed until the user asks.
+
+| Channel | Shown as | Receives from published GitHub Releases |
 | --- | --- | --- |
-| **Stable** (default) | Everyone | Published GitHub releases whose version has no pre-release part |
-| **Beta** (opt-in, Settings → Updates) | Testers | Stable releases plus published `beta` and `rc` pre-releases |
-| **Development** | Developers | CI artifacts (`kumo-dev-<sha>`) downloaded by hand; never offered by the updater |
+| **Release** (default) | Release — Recommended | Stable versions only (`0.1.0`, `0.1.1`, `0.2.0`) |
+| **Beta** | Beta — Early access | Stable plus `beta` and `rc` pre-releases |
+| **Development** | Development — Experimental | Stable plus `beta`, `rc`, `alpha` and `dev` pre-releases |
 
 Within a channel Kumo picks the highest SemVer version above its own, not the most recently published release, and
-never moves to a lower version. A beta user who returns to Stable stays on the beta they have until a higher stable
-version exists.
+never moves to a lower version. Someone on `0.3.0-beta.2` who returns to Release while the newest stable release is
+`0.2.5` keeps `0.3.0-beta.2`; Settings explain that Kumo will update when a newer stable release exists.
+
+**Development builds are not published as GitHub Releases.** CI produces them as workflow artifacts
+(`kumo-dev-<sha>`, versioned `<version>-dev.<run number>`) for manual download, and the release workflow refuses `dev`
+tags. Until that changes the Development channel offers alpha, beta and release candidate releases, and the Settings
+page says so. Microsoft Store copies ignore channels: the Store owns their updates.
 
 ## Release conventions
 

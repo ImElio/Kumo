@@ -45,6 +45,8 @@ actually executed. Last updated 2026-10-19 on Windows 11 Pro 10.0.26200, one mon
 | --- | --- | --- |
 | Local build shows "update checks aren't available" | Settings → Updates | Checked (screenshot); the hidden tray item was not checked by hand |
 | Real check against a published release | CI build of a tagged release with at least two published releases | Pending (no repository or releases yet) |
+| Settings → Updates in an update-enabled build: channel switch re-checks, status changes, Development warning, View update | Build with a configured repository | Pending (states unit-tested; only the disabled local-build page was checked on screen) |
+| Settings written by earlier builds (`"UpdateChannel": "Stable"`) load as Release without resetting other settings | Start the new build on an existing profile | Checked on the development machine |
 | Beta channel picks the highest beta/rc | Same, with pre-releases | Pending (unit-tested with mocked HTTP) |
 | Rate limit message and back-off | Exhaust the unauthenticated limit | Pending (unit-tested) |
 | Offline check shows the connection message | Disconnect, Check for updates | Pending (unit-tested) |

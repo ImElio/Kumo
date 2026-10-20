@@ -40,10 +40,13 @@ Parsing is strict: no leading zeros, no empty identifiers, three numeric parts. 
 
 | Stage | Meaning | Offered to |
 | --- | --- | --- |
-| `beta.N` | Feature-complete preview | Beta channel |
-| `rc.N` | Release candidate | Beta channel |
-| `alpha.N` | Early preview, may be published for testers who download it by hand | Nobody automatically |
-| `dev.N` | Local or CI development build | Nobody; never tagged |
+| `beta.N` | Feature-complete preview | Beta and Development channels |
+| `rc.N` | Release candidate | Beta and Development channels |
+| `alpha.N` | Early preview | Development channel |
+| `dev.N` | CI development build, `N` = workflow run number so later builds sort higher | Development channel if ever published; today CI artifacts only and never tagged |
+
+After a release, raise `<Version>` to the next planned version so development builds of `main`
+(`0.1.1-dev.N`) sort above the release they follow.
 
 ## Choosing the next version
 

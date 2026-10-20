@@ -86,8 +86,8 @@ Not supported yet: DOCX, audio, video, TIFF, HEIC, resizing by scale, and PDF te
 
 ## Updates
 
-Kumo can tell you when a new version is published on GitHub (Settings → Updates: Stable or Beta channel, automatic
-checks on or off, "Check for updates"). Today it announces the update and opens the release page; installing updates
+Kumo can tell you when a new version is published on GitHub (Settings → Updates: Release, Beta or Development
+channel, automatic checks on or off, "Check for updates"). Today it announces the update and opens the release page; installing updates
 through the NSIS installer is built and tested but stays off until releases are code-signed. Store copies are updated by the Microsoft
 Store. Local builds never check. Details: [versioning](docs/versioning.md), [releases](docs/releases.md),
 [updater](docs/updater.md), [distribution](docs/distribution.md).

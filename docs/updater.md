@@ -30,9 +30,12 @@ Folder names and install paths are never used to guess the installation type.
 - Once, about 30 seconds after start-up, if automatic checks are on (Settings → Updates; on by default).
 - Again only when Kumo is used (the menu opens) and the last automatic check is more than 24 hours old. There is no
   timer between checks.
-- On "Check for updates" in Settings or the tray menu, regardless of the 24-hour limit.
+- On "Check for updates" in Settings or the tray menu, regardless of the 24-hour limit, even with automatic checks
+  off.
+- Immediately after the update channel changes; the previous channel's cached result is discarded. A check already
+  running for the old channel finishes first, then the new channel is checked.
 - If GitHub reports a rate limit, automatic checks wait until its reset time.
-- Concurrent requests share one in-flight check.
+- Concurrent requests for the same channel share one in-flight check.
 
 Each check is one to three unauthenticated GET requests to `api.github.com` with the user agent
 `Kumo/<version> (+https://github.com/<owner>/<repo>)`. Nothing about the user or their files is sent. The HTTP
@@ -40,6 +43,15 @@ client is created on first use and its connections close after a minute of inact
 
 Stored state (`%LOCALAPPDATA%\Kumo\updates.json`): last check time, rate-limit reset time, last announced version,
 and a snoozed version with its date. Nothing else.
+
+## Status shown in Settings
+
+Settings → Updates follows the update service: "Kumo hasn't checked for updates yet", "Checking for updates…",
+"Kumo is up to date." (or the pre-release explanation above), "Kumo 0.2.0-beta.1 is available." with **View update**,
+a short failure message ("Couldn't check for updates. Try again later."), or "Updates managed by Microsoft Store.".
+Downloading and ready-to-install states appear in the update window, and only for installations that may install
+verified updates. The installation source reads Microsoft Store, GitHub (Kumo's installer), Portable, or Unknown
+(an MSIX package from outside the Store).
 
 ## Notifications
 
