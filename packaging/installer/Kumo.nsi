@@ -43,6 +43,7 @@ SetCompressor /SOLID lzma
 !endif
 
 Name "Kumo"
+SpaceTexts none
 AllowSkipFiles off
 OutFile "${OUTFILE}"
 InstallDir "$LOCALAPPDATA\Programs\Kumo"
@@ -68,6 +69,10 @@ VIAddVersionKey "LegalCopyright" "Copyright (c) 2026 ImElio"
 !define MUI_WELCOMEPAGE_TITLE "Welcome to Kumo"
 !define MUI_WELCOMEPAGE_TEXT "Kumo lives in the notification area. Drag files in File Explorer, tap Shift, and pick what to do with them.$\r$\n$\r$\nKumo installs for your account only and doesn't need administrator rights."
 !define MUI_COMPONENTSPAGE_NODESC
+!define MUI_PAGE_HEADER_TEXT "Choose additional tasks"
+!define MUI_PAGE_HEADER_SUBTEXT "You can change both later in Kumo's Settings or in Windows."
+!define MUI_COMPONENTSPAGE_TEXT_TOP "Select what Setup should do while installing Kumo."
+!define MUI_COMPONENTSPAGE_TEXT_COMPLIST " "
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Kumo.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Start Kumo"
 
@@ -191,8 +196,7 @@ Function CloseKumo
   done:
 FunctionEnd
 
-Section "Kumo" SecKumo
-  SectionIn RO
+Section "-Kumo" SecKumo
   SetShellVarContext current
   Call RequireValidInstallDir
   Call CloseKumo
@@ -243,13 +247,13 @@ Section "Kumo" SecKumo
 SectionEnd
 
 ; Silent runs are updates started by Kumo, so they keep the user's own choices about these two.
-Section "Desktop shortcut" SecDesktop
+Section "Create a desktop shortcut" SecDesktop
   ${IfNot} ${Silent}
     CreateShortcut "$DESKTOP\Kumo.lnk" "$INSTDIR\Kumo.exe"
   ${EndIf}
 SectionEnd
 
-Section "Start with Windows" SecStartup
+Section "Start Kumo with Windows" SecStartup
   ${IfNot} ${Silent}
     WriteRegStr HKCU "${RUN_KEY}" "Kumo" '"$INSTDIR\Kumo.exe" --background'
   ${EndIf}
