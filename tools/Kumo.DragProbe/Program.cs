@@ -38,6 +38,8 @@ internal static partial class Program
                 var (passed, detail) = scenario switch
                 {
                     "drop" => DropOnSegment(item, kumo.Id, sample),
+                    "quick" => QuickDropOnHub(item, sample),
+                    "quickmany" => QuickDropOnHub(SelectAll(explorer, item), sample),
                     "escape" => CancelWithEscape(item, sample),
                     "elsewhere" => ReleaseElsewhere(item, explorer, sample),
                     "hold" => HoldShiftKeepsExplorerSemantics(item, sample),
@@ -155,6 +157,43 @@ internal static partial class Program
         File.Delete(expected);
         return (activated && dropped && converted && output && intact,
             $"activated={activated} dropAccepted={dropped} convertedToJpg={converted} outputWritten={output} sourceIntact={intact}");
+    }
+
+    // Releases on the hub right after the menu appears, before the dragged files may have been inspected.
+    // The drop must still be accepted and leave the menu open for a click.
+    private static (bool, string) QuickDropOnHub(System.Windows.Point item, string sample)
+    {
+        long mark = LogMark();
+        var drag = Input.BeginDrag(item);
+        Input.TapShift();
+        Thread.Sleep(15);
+        Input.MoveSmoothly(drag, new System.Windows.Point(drag.X + 2, drag.Y + 1), 2);
+        Input.LeftUp();
+        Thread.Sleep(900);
+        var lines = LogSince(mark);
+        bool activated = lines.Any(l => l.Contains("\"Overlay activated\""));
+        bool accepted = lines.Any(l => l.Contains("\"Drop accepted\""));
+        bool released = lines.Any(l => l.Contains("\"reason\":\"released-elsewhere\""));
+        string? rejection = lines.FirstOrDefault(l => l.Contains("\"Drop rejected\""));
+        bool intact = File.Exists(sample);
+        Input.Key(0x1B, down: true);
+        Input.Key(0x1B, down: false);
+        Thread.Sleep(300);
+        return (activated && accepted && !released && intact,
+            $"activated={activated} dropAccepted={accepted} closedOnRelease={released} sourceIntact={intact}{(rejection != null ? " rejected=" + rejection : "")}");
+    }
+
+    private static System.Windows.Point SelectAll(AutomationElement explorer, System.Windows.Point item)
+    {
+        explorer.SetFocus();
+        Input.MoveSmoothly(item, item, 1);
+        Thread.Sleep(200);
+        Input.Key(0x11, down: true);
+        Input.Key(0x41, down: true);
+        Input.Key(0x41, down: false);
+        Input.Key(0x11, down: false);
+        Thread.Sleep(400);
+        return item;
     }
 
     private static (bool, string) CancelWithEscape(System.Windows.Point item, string sample)
