@@ -392,138 +392,145 @@ export default function DesktopDemo() {
 
   return (
     <div className={styles.demo}>
-      <div
-        ref={desktopRef}
-        className={styles.desktop}
-        onPointerDown={onDesktopPointerDown}
-        onPointerMove={onDesktopPointerMove}
-        onPointerUp={onDesktopPointerUp}
-        onPointerCancel={() => setMarquee(null)}
-      >
-        <ul className={styles.icons} aria-label="Demo desktop. Select files with Space, then press Enter to open Kumo." data-surface="true">
-          {desktop.map((entry) => (
-            <li key={entry.name}>
-              <button
-                ref={(el) => {
-                  if (el) iconRefs.current.set(entry.name, el);
-                  else iconRefs.current.delete(entry.name);
-                }}
-                type="button"
-                className={`${styles.icon} ${selected.includes(entry.name) ? styles.selected : ""} ${dragging?.files.some((f) => f.name === entry.name) ? styles.lifted : ""} ${entry.fresh ? styles.fresh : ""}`}
-                aria-pressed={selected.includes(entry.name)}
-                aria-label={entry.name}
-                onPointerDown={(e) => onIconPointerDown(e, entry)}
-                onPointerMove={onIconPointerMove}
-                onPointerUp={(e) => onIconPointerUp(e, entry)}
-                onPointerCancel={() => setDrag(null)}
-                onKeyDown={(e) => onIconKeyDown(e, entry)}
-              >
-                <Thumb file={entry} />
-                <span className={styles.name}>{entry.name}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-
-        {marquee && (
+      <div className={styles.monitor}>
+        <div className={styles.screen}>
           <div
-            className={styles.marquee}
-            style={{
-              left: Math.min(marquee.startX, marquee.x),
-              top: Math.min(marquee.startY, marquee.y),
-              width: Math.abs(marquee.x - marquee.startX),
-              height: Math.abs(marquee.y - marquee.startY),
-            }}
-            aria-hidden="true"
-          />
-        )}
-
-        {dragging && (
-          <div className={styles.ghost} style={{ left: dragging.x, top: dragging.y }} aria-hidden="true">
-            <Thumb file={dragging.files[0]} />
-            {dragging.files.length > 1 && <span className={styles.count}>{dragging.files.length}</span>}
-          </div>
-        )}
-
-        {menu && (
-          <div
-            className={styles.menu}
-            style={{ left: menu.x - SIZE / 2, top: menu.y - SIZE / 2, width: SIZE }}
-            role="menu"
-            aria-label={`Kumo for ${selectionText(menu.files)}`}
-            onKeyDown={onMenuKeyDown}
+            ref={desktopRef}
+            className={styles.desktop}
+            onPointerDown={onDesktopPointerDown}
+            onPointerMove={onDesktopPointerMove}
+            onPointerUp={onDesktopPointerUp}
+            onPointerCancel={() => setMarquee(null)}
           >
-            <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true" className={styles.ring}>
-              <circle cx={SIZE / 2} cy={SIZE / 2} r={OUTER + 4} className={`${styles.disk} ${menu.phase === "running" || menu.phase === "result" || menu.phase === "unavailable" ? styles.diskHidden : ""}`} />
-              {items.map((item, i) => (
-                <path key={`${menu.category}-${item.label}`} d={sector(i, items.length)} className={`${styles.segment} ${menu.hover === i ? styles.hot : ""}`} />
+            <Wallpaper />
+            <ul className={styles.icons} aria-label="Demo desktop. Select files with Space, then press Enter to open Kumo." data-surface="true">
+              {desktop.map((entry) => (
+                <li key={entry.name}>
+                  <button
+                    ref={(el) => {
+                      if (el) iconRefs.current.set(entry.name, el);
+                      else iconRefs.current.delete(entry.name);
+                    }}
+                    type="button"
+                    className={`${styles.icon} ${selected.includes(entry.name) ? styles.selected : ""} ${dragging?.files.some((f) => f.name === entry.name) ? styles.lifted : ""} ${entry.fresh ? styles.fresh : ""}`}
+                    aria-pressed={selected.includes(entry.name)}
+                    aria-label={entry.name}
+                    onPointerDown={(e) => onIconPointerDown(e, entry)}
+                    onPointerMove={onIconPointerMove}
+                    onPointerUp={(e) => onIconPointerUp(e, entry)}
+                    onPointerCancel={() => setDrag(null)}
+                    onKeyDown={(e) => onIconKeyDown(e, entry)}
+                  >
+                    <Thumb file={entry} />
+                    <span className={styles.name}>{entry.name}</span>
+                  </button>
+                </li>
               ))}
-              {menu.phase === "running" && <circle cx={SIZE / 2} cy={SIZE / 2} r={HUB + 4} className={styles.progress} pathLength={1} />}
-            </svg>
+            </ul>
 
-            {items.map((item, i) => {
-              const pos = labelPosition(i, items.length);
-              const icon = !menu.category ? item.icon : null;
-              return (
+            {marquee && (
+              <div
+                className={styles.marquee}
+                style={{
+                  left: Math.min(marquee.startX, marquee.x),
+                  top: Math.min(marquee.startY, marquee.y),
+                  width: Math.abs(marquee.x - marquee.startX),
+                  height: Math.abs(marquee.y - marquee.startY),
+                }}
+                aria-hidden="true"
+              />
+            )}
+
+            {dragging && (
+              <div className={styles.ghost} style={{ left: dragging.x, top: dragging.y }} aria-hidden="true">
+                <Thumb file={dragging.files[0]} />
+                {dragging.files.length > 1 && <span className={styles.count}>{dragging.files.length}</span>}
+              </div>
+            )}
+
+            {menu && (
+              <div
+                className={styles.menu}
+                style={{ left: menu.x - SIZE / 2, top: menu.y - SIZE / 2, width: SIZE }}
+                role="menu"
+                aria-label={`Kumo for ${selectionText(menu.files)}`}
+                onKeyDown={onMenuKeyDown}
+              >
+                <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true" className={styles.ring}>
+                  <circle cx={SIZE / 2} cy={SIZE / 2} r={OUTER + 4} className={`${styles.disk} ${menu.phase === "running" || menu.phase === "result" || menu.phase === "unavailable" ? styles.diskHidden : ""}`} />
+                  {items.map((item, i) => (
+                    <path key={`${menu.category}-${item.label}`} d={sector(i, items.length)} className={`${styles.segment} ${menu.hover === i ? styles.hot : ""}`} />
+                  ))}
+                  {menu.phase === "running" && <circle cx={SIZE / 2} cy={SIZE / 2} r={HUB + 4} className={styles.progress} pathLength={1} />}
+                </svg>
+
+                {items.map((item, i) => {
+                  const pos = labelPosition(i, items.length);
+                  const icon = !menu.category ? item.icon : null;
+                  return (
+                    <button
+                      key={`${menu.category}-${item.label}`}
+                      ref={(el) => {
+                        segmentRefs.current[i] = el;
+                      }}
+                      type="button"
+                      role="menuitem"
+                      tabIndex={menu.interactive ? 0 : -1}
+                      className={`${styles.label} ${menu.hover === i ? styles.labelHot : ""}`}
+                      style={{ left: pos.left, top: pos.top }}
+                      onClick={() => activate(i, false)}
+                      onMouseEnter={() => menu.interactive && updateHover(i)}
+                      onFocus={() => updateHover(i)}
+                      aria-label={item.description}
+                      aria-haspopup={item.kind === "category" ? "menu" : undefined}
+                    >
+                      {icon && <Glyph icon={icon} />}
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+
                 <button
-                  key={`${menu.category}-${item.label}`}
-                  ref={(el) => {
-                    segmentRefs.current[i] = el;
-                  }}
                   type="button"
-                  role="menuitem"
+                  className={`${styles.hub} ${menu.hover === "hub" ? styles.hubHot : ""}`}
+                  style={{ left: SIZE / 2 - HUB, top: SIZE / 2 - HUB, width: HUB * 2, height: HUB * 2 }}
                   tabIndex={menu.interactive ? 0 : -1}
-                  className={`${styles.label} ${menu.hover === i ? styles.labelHot : ""}`}
-                  style={{ left: pos.left, top: pos.top }}
-                  onClick={() => activate(i, false)}
-                  onMouseEnter={() => menu.interactive && updateHover(i)}
-                  onFocus={() => updateHover(i)}
-                  aria-label={item.description}
-                  aria-haspopup={item.kind === "category" ? "menu" : undefined}
+                  onClick={() => (menu.category && menu.phase === "menu" ? goBack() : menu.phase !== "running" && closeMenu())}
+                  aria-label={menu.category && menu.phase === "menu" ? "Back" : "Close"}
                 >
-                  {icon && <Glyph icon={icon} />}
-                  <span>{item.label}</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/mascot/${menu.mascot}.png`} alt="" width={64} height={64} />
                 </button>
-              );
-            })}
 
-            <button
-              type="button"
-              className={`${styles.hub} ${menu.hover === "hub" ? styles.hubHot : ""}`}
-              style={{ left: SIZE / 2 - HUB, top: SIZE / 2 - HUB, width: HUB * 2, height: HUB * 2 }}
-              tabIndex={menu.interactive ? 0 : -1}
-              onClick={() => (menu.category && menu.phase === "menu" ? goBack() : menu.phase !== "running" && closeMenu())}
-              aria-label={menu.category && menu.phase === "menu" ? "Back" : "Close"}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/mascot/${menu.mascot}.png`} alt="" width={64} height={64} />
-            </button>
-
-            <div className={styles.status} role="status">
-              <span>{menu.status}</span>
-              {(menu.phase === "unavailable" || menu.phase === "result") && (
-                <button type="button" className={styles.statusAction} onClick={closeMenu}>
-                  Close
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {menu?.phase === "dialog" && menu.dialog && (
-          <div className={styles.scrim}>
-            {menu.dialog.requirement === "crop" && (
-              <CropEditor file={menu.files[0]} onCancel={cancelDialog} onCrop={(crop) => run(menu.dialog!.entry, { crop })} />
+                <div className={styles.status} role="status">
+                  <span>{menu.status}</span>
+                  {(menu.phase === "unavailable" || menu.phase === "result") && (
+                    <button type="button" className={styles.statusAction} onClick={closeMenu}>
+                      Close
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
-            {menu.dialog.requirement === "pages" && (
-              <PagesDialog fileCount={menu.files.length} onCancel={cancelDialog} onConfirm={(pages) => run(menu.dialog!.entry, { pages })} />
-            )}
-            {menu.dialog.requirement === "password" && (
-              <PasswordDialog onCancel={cancelDialog} onConfirm={(password) => run(menu.dialog!.entry, { password })} />
+
+            {menu?.phase === "dialog" && menu.dialog && (
+              <div className={styles.scrim}>
+                {menu.dialog.requirement === "crop" && (
+                  <CropEditor file={menu.files[0]} onCancel={cancelDialog} onCrop={(crop) => run(menu.dialog!.entry, { crop })} />
+                )}
+                {menu.dialog.requirement === "pages" && (
+                  <PagesDialog fileCount={menu.files.length} onCancel={cancelDialog} onConfirm={(pages) => run(menu.dialog!.entry, { pages })} />
+                )}
+                {menu.dialog.requirement === "password" && (
+                  <PasswordDialog onCancel={cancelDialog} onConfirm={(password) => run(menu.dialog!.entry, { password })} />
+                )}
+              </div>
             )}
           </div>
-        )}
+          <Taskbar />
+        </div>
       </div>
+      <div className={styles.stand} aria-hidden="true" />
 
       <div className={styles.bar}>
         <p className={styles.hint} aria-live="polite">
@@ -539,6 +546,47 @@ export default function DesktopDemo() {
         <button type="button" className={styles.reset} onClick={reset} disabled={!changed && !menu}>
           Reset
         </button>
+      </div>
+    </div>
+  );
+}
+
+function Wallpaper() {
+  return (
+    <svg className={styles.wallpaper} viewBox="0 0 1000 460" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+      <circle className={styles.wallSun} cx="780" cy="250" r="46" />
+      <path className={styles.wallBack} d="M0 300C140 250 260 262 400 290s300-70 440-40 120 40 160 30V460H0Z" />
+      <path className={styles.wallMid} d="M0 350c160-40 330-30 500-4s330-50 500-20V460H0Z" />
+      <path className={styles.wallFront} d="M0 400c200-26 420-16 620 4s280-14 380-8V460H0Z" />
+    </svg>
+  );
+}
+
+/** A Windows-style taskbar with generic icons, Kumo in the notification area and the visitor's own clock. */
+function Taskbar() {
+  const [time, setTime] = useState("");
+  useEffect(() => {
+    const tick = () => setTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+    tick();
+    const id = window.setInterval(tick, 20_000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className={styles.taskbar} aria-hidden="true">
+      <div className={styles.taskApps}>
+        <span className={styles.startButton}>
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className={styles.search}>Search</span>
+        <span className={styles.folderApp} />
+      </div>
+      <div className={styles.tray}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/mascot/idle.png" alt="" width={18} height={18} />
+        <span>{time}</span>
       </div>
     </div>
   );

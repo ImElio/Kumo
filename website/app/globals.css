@@ -20,6 +20,11 @@
   --sun-glow: rgba(255, 196, 140, 0.55);
   --drift: rgba(255, 255, 255, 0.85);
   --star: transparent;
+  --wall-top: #e59a7a;
+  --wall-bottom: #f5c79f;
+  --wall-1: #d9896a;
+  --wall-2: #c27058;
+  --wall-3: #a65c49;
   --grain: 0.16;
   --header-bg: rgba(251, 242, 233, 0.72);
   --shadow: 0 1px 2px rgba(80, 50, 20, 0.06), 0 12px 32px -12px rgba(80, 50, 20, 0.18);
@@ -55,6 +60,11 @@
   --sun-glow: rgba(244, 230, 207, 0.18);
   --drift: rgba(120, 100, 120, 0.35);
   --star: #f6dcc0;
+  --wall-top: #241a2b;
+  --wall-bottom: #4a2f45;
+  --wall-1: #3e2a3b;
+  --wall-2: #30212f;
+  --wall-3: #241a24;
   --grain: 0.1;
   --header-bg: rgba(33, 26, 29, 0.72);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 36px -14px rgba(0, 0, 0, 0.6);
@@ -84,6 +94,11 @@
     --sun-glow: rgba(244, 230, 207, 0.18);
     --drift: rgba(120, 100, 120, 0.35);
     --star: #f6dcc0;
+    --wall-top: #241a2b;
+    --wall-bottom: #4a2f45;
+    --wall-1: #3e2a3b;
+    --wall-2: #30212f;
+    --wall-3: #241a24;
     --grain: 0.1;
     --header-bg: rgba(33, 26, 29, 0.72);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 36px -14px rgba(0, 0, 0, 0.6);
