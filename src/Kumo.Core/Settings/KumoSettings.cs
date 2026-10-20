@@ -83,9 +83,9 @@ public sealed class KumoSettings
 
     public bool WelcomeShown { get; set; }
 
-    public Updates.UpdateChannel UpdateChannel { get; set; } = Updates.UpdateChannel.Stable;
+    public Updates.UpdateChannel UpdateChannel { get; set; } = Updates.UpdateChannel.Release;
 
-    /// <summary>One request to GitHub at most once a day, shortly after start-up.</summary>
+    /// <summary>One request to GitHub at most once a day; manual checks work either way.</summary>
     public bool AutomaticUpdateChecks { get; set; } = true;
 
     public KumoSettings Normalize()
@@ -98,7 +98,7 @@ public sealed class KumoSettings
         MenuSize = Enum.IsDefined(MenuSize) ? MenuSize : MenuSize.Standard;
         Motion = Enum.IsDefined(Motion) ? Motion : MotionPreference.System;
         Collisions = Enum.IsDefined(Collisions) ? Collisions : CollisionBehavior.AddNumber;
-        UpdateChannel = Enum.IsDefined(UpdateChannel) ? UpdateChannel : Updates.UpdateChannel.Stable;
+        UpdateChannel = Enum.IsDefined(UpdateChannel) ? UpdateChannel : Updates.UpdateChannel.Release;
         Hotkey = Hotkey?.Trim() ?? string.Empty;
         if (Hotkey.Length > 0 && !HotkeyGesture.TryParse(Hotkey, out _))
             Hotkey = DefaultHotkey;

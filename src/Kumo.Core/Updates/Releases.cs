@@ -1,11 +1,33 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Kumo.Core.Updates;
 
+[JsonConverter(typeof(UpdateChannelJsonConverter))]
 public enum UpdateChannel
 {
-    Stable,
+    Release,
     Beta,
+    Development,
+}
+
+/// <summary>
+/// Stores channels by name and reads the "Stable" name used by pre-release builds as Release, so an older settings
+/// file is not mistaken for a corrupt one and reset.
+/// </summary>
+public sealed class UpdateChannelJsonConverter : JsonConverter<UpdateChannel>
+{
+    public override UpdateChannel Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        string? name = reader.TokenType == JsonTokenType.String ? reader.GetString() : null;
+        if (string.Equals(name, "Stable", StringComparison.OrdinalIgnoreCase))
+            return UpdateChannel.Release;
+        return Enum.TryParse<UpdateChannel>(name, ignoreCase: true, out var channel) && Enum.IsDefined(channel) ? channel : UpdateChannel.Release;
+    }
+
+    public override void Write(Utf8JsonWriter writer, UpdateChannel value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value.ToString());
 }
 
 /// <summary>How this copy of Kumo was installed, which decides who owns its updates.</summary>
@@ -79,8 +101,17 @@ public static partial class ReleaseAssets
 /// <summary>Channel rules: which published releases a given installation may be offered.</summary>
 public static class ReleaseSelector
 {
-    /// <summary>Pre-release stages that the beta channel accepts. Anything else (alpha, dev, ...) is never offered.</summary>
-    public static readonly IReadOnlySet<string> BetaStages = new HashSet<string>(StringComparer.Ordinal) { "beta", "rc" };
+    /// <summary>Pre-release stages each channel accepts on top of stable releases. Unknown stages are never offered.</summary>
+    public static IReadOnlySet<string> StagesFor(UpdateChannel channel) => channel switch
+    {
+        UpdateChannel.Beta => BetaStages,
+        UpdateChannel.Development => DevelopmentStages,
+        _ => NoStages,
+    };
+
+    private static readonly IReadOnlySet<string> NoStages = new HashSet<string>();
+    private static readonly IReadOnlySet<string> BetaStages = new HashSet<string>(StringComparer.Ordinal) { "beta", "rc" };
+    private static readonly IReadOnlySet<string> DevelopmentStages = new HashSet<string>(StringComparer.Ordinal) { "dev", "alpha", "beta", "rc" };
 
     public static bool IsEligible(UpdateRelease release, UpdateChannel channel)
     {
@@ -92,7 +123,7 @@ public static class ReleaseSelector
             return false;
         if (!release.Version.IsPrerelease)
             return true;
-        return channel == UpdateChannel.Beta && BetaStages.Contains(release.Version.Stage);
+        return StagesFor(channel).Contains(release.Version.Stage);
     }
 
     /// <summary>

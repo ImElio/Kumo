@@ -38,6 +38,8 @@ public sealed record UpdateEnvironment(
 
 public enum UpdateStatus
 {
+    Idle,
+    Checking,
     Disabled,
     Skipped,
     UpToDate,
@@ -117,22 +119,32 @@ public sealed class UpdateService
     private readonly IUpdateSource? _source;
     private readonly UpdateStateStore _store;
     private readonly Func<UpdateChannel> _channel;
+    private readonly Func<bool> _automaticChecks;
     private readonly TimeProvider _clock;
     private readonly Log _log;
     private readonly object _gate = new();
     private Task<UpdateCheckResult>? _inFlight;
+    private UpdateChannel _inFlightChannel;
     private UpdateState _state;
 
-    public UpdateService(UpdateEnvironment environment, IUpdateSource? source, UpdateStateStore store, Func<UpdateChannel> channel, Log log, TimeProvider? clock = null)
+    public UpdateService(UpdateEnvironment environment, IUpdateSource? source, UpdateStateStore store, Func<UpdateChannel> channel, Log log,
+        TimeProvider? clock = null, Func<bool>? automaticChecks = null)
     {
         Environment = environment;
         _source = source;
         _store = store;
         _channel = channel;
+        _automaticChecks = automaticChecks ?? (() => true);
         _log = log;
         _clock = clock ?? TimeProvider.System;
         _state = store.Load();
     }
+
+    /// <summary>Raised whenever <see cref="Status"/> changes, on whichever thread finished the work.</summary>
+    public event Action<UpdateCheckResult>? StatusChanged;
+
+    /// <summary>The latest state for display: Idle before the first check, Checking while one runs, then its outcome.</summary>
+    public UpdateCheckResult Status { get; private set; } = new(UpdateStatus.Idle, string.Empty);
 
     public UpdateEnvironment Environment { get; }
 
@@ -140,16 +152,39 @@ public sealed class UpdateService
 
     public UpdateCheckResult? LastResult { get; private set; }
 
-    /// <summary>Concurrent callers share the check already in progress instead of starting another request.</summary>
+    /// <summary>
+    /// Concurrent callers for the same channel share the check already in progress. A check for a different channel
+    /// waits for the running one and then asks again, so its answer always reflects the channel that was selected.
+    /// </summary>
     public Task<UpdateCheckResult> CheckAsync(bool manual, CancellationToken cancellationToken)
     {
         lock (_gate)
         {
-            if (_inFlight is { IsCompleted: false })
-                return _inFlight;
-            _inFlight = RunCheckAsync(manual, cancellationToken);
+            var channel = _channel();
+            if (_inFlight is { IsCompleted: false } running)
+            {
+                if (channel == _inFlightChannel)
+                    return running;
+                _inFlight = AfterAsync(running, channel, manual, cancellationToken);
+            }
+            else
+            {
+                _inFlight = RunCheckAsync(channel, manual, cancellationToken);
+            }
+            _inFlightChannel = channel;
             return _inFlight;
         }
+    }
+
+    /// <summary>
+    /// The cached answer belongs to the previous channel, so it is dropped and a fresh check runs immediately. Nothing is
+    /// downloaded or installed; an available update is only reported.
+    /// </summary>
+    public Task<UpdateCheckResult> ChannelChangedAsync(CancellationToken cancellationToken)
+    {
+        LastResult = null;
+        _log.Info("Update channel changed", ("channel", _channel().ToString()));
+        return CheckAsync(manual: true, cancellationToken);
     }
 
     public bool ShouldNotify(UpdateCheckResult result)
@@ -177,16 +212,45 @@ public sealed class UpdateService
         _store.Save(_state);
     }
 
-    private async Task<UpdateCheckResult> RunCheckAsync(bool manual, CancellationToken cancellationToken)
+    private async Task<UpdateCheckResult> AfterAsync(Task<UpdateCheckResult> previous, UpdateChannel channel, bool manual, CancellationToken cancellationToken)
     {
-        var result = await CheckCoreAsync(manual, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await previous.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // The earlier check was for another channel; its outcome no longer matters.
+        }
+        return await RunCheckAsync(channel, manual, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<UpdateCheckResult> RunCheckAsync(UpdateChannel channel, bool manual, CancellationToken cancellationToken)
+    {
+        var before = Status;
+        bool goesOnline = manual || IsAutomaticCheckDue();
+        if (goesOnline && Capability is UpdateCapability.NotifyOnly or UpdateCapability.InstallVerified)
+            Publish(new UpdateCheckResult(UpdateStatus.Checking, "Checking for updates…"));
+
+        UpdateCheckResult result;
+        try
+        {
+            result = await CheckCoreAsync(channel, manual, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            Publish(before);
+            throw;
+        }
+
+        Publish(result.Status == UpdateStatus.Skipped ? before : result);
         LastResult = result.Status == UpdateStatus.Skipped ? LastResult : result;
         _log.Info("Update check", ("status", result.Status.ToString()), ("manual", manual),
             ("version", result.Release?.Version.ToString()), ("error", result.Error?.ToString()));
         return result;
     }
 
-    private async Task<UpdateCheckResult> CheckCoreAsync(bool manual, CancellationToken cancellationToken)
+    private async Task<UpdateCheckResult> CheckCoreAsync(UpdateChannel channel, bool manual, CancellationToken cancellationToken)
     {
         switch (Capability)
         {
@@ -199,6 +263,8 @@ public sealed class UpdateService
         var now = _clock.GetUtcNow();
         if (!manual)
         {
+            if (!_automaticChecks())
+                return new UpdateCheckResult(UpdateStatus.Skipped, "Automatic checks are off.");
             if (_state.LastCheckedUtc is { } last && now - last < AutomaticInterval)
                 return new UpdateCheckResult(UpdateStatus.Skipped, "Checked recently.");
             if (_state.RetryAfterUtc is { } retry && now < retry)
@@ -212,9 +278,9 @@ public sealed class UpdateService
             _state.RetryAfterUtc = null;
             _store.Save(_state);
 
-            var update = ReleaseSelector.SelectUpdate(releases, Environment.CurrentVersion, _channel(), Environment.Installation, Environment.Architecture);
+            var update = ReleaseSelector.SelectUpdate(releases, Environment.CurrentVersion, channel, Environment.Installation, Environment.Architecture);
             return update is null
-                ? new UpdateCheckResult(UpdateStatus.UpToDate, "Kumo is up to date.")
+                ? new UpdateCheckResult(UpdateStatus.UpToDate, UpToDateMessage(channel))
                 : new UpdateCheckResult(UpdateStatus.Available, $"Kumo {update.Version.ToShortString()} is available.", update);
         }
         catch (UpdateException ex)
@@ -225,10 +291,40 @@ public sealed class UpdateService
                 _store.Save(_state);
             }
             _log.Warning("Update check failed", ("kind", ex.Kind.ToString()), ("detail", ex.InnerException?.Message ?? ex.Message));
-            string message = ex.Kind is UpdateErrorKind.Network or UpdateErrorKind.Timeout
-                ? "Couldn't check for updates. Check your connection and try again."
-                : ex.Message;
+            string message = ex.Kind switch
+            {
+                UpdateErrorKind.Network or UpdateErrorKind.Timeout => "Couldn't check for updates. Check your connection and try again.",
+                UpdateErrorKind.RateLimited => ex.Message,
+                _ => "Couldn't check for updates. Try again later.",
+            };
             return new UpdateCheckResult(UpdateStatus.Failed, message, Error: ex.Kind);
         }
+    }
+
+    /// <summary>
+    /// After returning to a channel that does not accept the installed pre-release, nothing is offered until a higher
+    /// version on that channel exists. Kumo never moves to a lower version, so this is said plainly.
+    /// </summary>
+    private string UpToDateMessage(UpdateChannel channel)
+    {
+        var current = Environment.CurrentVersion;
+        if (!current.IsPrerelease || ReleaseSelector.StagesFor(channel).Contains(current.Stage))
+            return "Kumo is up to date.";
+        string kind = channel == UpdateChannel.Release ? "stable release" : "version on this channel";
+        return $"You're using the pre-release {current.ToShortString()}. Kumo will update when a newer {kind} is available.";
+    }
+
+    private bool IsAutomaticCheckDue()
+    {
+        var now = _clock.GetUtcNow();
+        return _automaticChecks()
+            && !(_state.LastCheckedUtc is { } last && now - last < AutomaticInterval)
+            && !(_state.RetryAfterUtc is { } retry && now < retry);
+    }
+
+    private void Publish(UpdateCheckResult status)
+    {
+        Status = status;
+        StatusChanged?.Invoke(status);
     }
 }

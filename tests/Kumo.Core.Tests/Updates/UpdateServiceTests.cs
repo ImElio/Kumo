@@ -17,7 +17,7 @@ public sealed class UpdateServiceTests : IDisposable
     private static UpdateEnvironment Environment(InstallationKind kind = InstallationKind.Portable, bool repository = true, string publisher = "") =>
         new(SemVersion.Parse("0.1.2"), kind, Architecture.X64, repository ? Repository : null, publisher);
 
-    private UpdateService Service(FakeSource source, UpdateEnvironment? environment = null, UpdateChannel channel = UpdateChannel.Stable) =>
+    private UpdateService Service(FakeSource source, UpdateEnvironment? environment = null, UpdateChannel channel = UpdateChannel.Release) =>
         new(environment ?? Environment(), source, Store, () => channel, Log.Null, _clock);
 
     [Fact]
@@ -216,6 +216,6 @@ public sealed class UpdateServiceTests : IDisposable
         Assert.Equal(UpdateChannel.Beta, loaded.UpdateChannel);
         Assert.False(loaded.AutomaticUpdateChecks);
         Assert.True(new KumoSettings().AutomaticUpdateChecks);
-        Assert.Equal(UpdateChannel.Stable, new KumoSettings().UpdateChannel);
+        Assert.Equal(UpdateChannel.Release, new KumoSettings().UpdateChannel);
     }
 }
