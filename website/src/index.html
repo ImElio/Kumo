@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kumo — quick file actions for Windows</title>
+    <meta name="description" content="Kumo is a free, open-source Windows utility. Drag files, tap Shift, and convert, crop, compress or combine them from a radial menu.">
+    <meta name="theme-color" content="#faf6f0">
+    {{socialMeta}}
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Kumo — quick file actions for Windows">
+    <meta property="og:description" content="Drag files, tap Shift, and convert, crop, compress or combine them from a radial menu. Free and open source.">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="assets/favicon-32.png" type="image/png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="#top" aria-label="Kumo, home">
+          <img src="assets/kumo-64.png" width="32" height="32" alt="">
+          <span>Kumo</span>
+        </a>
+        <nav aria-label="Main">
+          <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="{{repository}}">GitHub</a></li>
+            <li><a class="nav-download" href="#download">Download</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero wrap" id="top" aria-labelledby="hero-title">
+        <div class="hero-text">
+          <p class="eyebrow">A small utility for Windows</p>
+          <h1 id="hero-title">Your files.<br>A little easier.</h1>
+          <p class="lede">
+            Kumo puts everyday file actions in a radial menu that opens where you are already working.
+            Drag files in File Explorer, tap <kbd>Shift</kbd>, and release on what you want done.
+          </p>
+          <div class="actions" id="download">
+            <a class="button button-primary" href="{{downloadX64}}">Download for Windows</a>
+            <a class="button button-secondary" href="{{repository}}">View on GitHub</a>
+          </div>
+          <p class="release-meta">
+            Version {{version}} · Windows 10 and 11 · 64-bit ·
+            <a href="{{downloadArm64}}">ARM64 installer</a> ·
+            <a href="{{releasePage}}">Release notes</a>
+          </p>
+        </div>
+        <img class="hero-mascot" src="assets/kumo.webp" width="240" height="211" alt="Kumo, a small cloud wearing an orange scarf">
+      </section>
+
+      <section class="demo" aria-labelledby="demo-title">
+        <div class="wrap demo-inner">
+          <figure class="demo-figure">
+            <div class="desktop">
+              <img src="assets/radial-menu.webp" width="340" height="380"
+                   alt="Kumo's radial menu open on the Windows desktop for one image, with Convert, Rotate, Crop and Compress around the mascot">
+            </div>
+            <figcaption>The menu for one image, as it appears on the desktop.</figcaption>
+          </figure>
+          <div class="demo-text">
+            <h2 id="demo-title">Three moves, no windows to open</h2>
+            <ol class="steps">
+              <li><span class="step-title">Start dragging.</span> Pick up one or more files in File Explorer or on the desktop.</li>
+              <li><span class="step-title">Tap Shift.</span> Kumo's menu appears under the pointer, showing only what works for those files.</li>
+              <li><span class="step-title">Release on an action.</span> Results are saved as new files next to the originals.</li>
+            </ol>
+            <p class="aside">
+              Holding Shift instead of tapping it keeps Windows' usual move behaviour. You can also press
+              <kbd>Ctrl</kbd>&nbsp;<kbd>Alt</kbd>&nbsp;<kbd>K</kbd> for the files selected in Explorer, or open Kumo from the
+              notification area.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="features wrap" id="features" aria-labelledby="features-title">
+        <h2 id="features-title">What it does in {{version}}</h2>
+
+        <div class="feature-groups">
+          <div class="feature-group">
+            <h3>Images</h3>
+            <dl>
+              <dt>Convert</dt>
+              <dd>PNG, JPEG, WebP, BMP and GIF to PNG, JPEG, WebP, BMP or PDF.</dd>
+              <dt>Crop</dt>
+              <dd>In a preview editor with handles, guides and ratios such as 1:1, 4:3 and 16:9.</dd>
+              <dt>Rotate</dt>
+              <dd>Turn images without opening an editor.</dd>
+              <dt>Compress</dt>
+              <dd>Smaller JPEG and WebP files; PNG compression is lossless.</dd>
+            </dl>
+          </div>
+          <div class="feature-group">
+            <h3>PDFs</h3>
+            <dl>
+              <dt>Merge</dt>
+              <dd>Combine several PDFs, or several images, into one document.</dd>
+              <dt>Split</dt>
+              <dd>One file per page, or only the pages you choose.</dd>
+              <dt>Protect</dt>
+              <dd>Save a password-protected copy.</dd>
+              <dt>To images</dt>
+              <dd>Turn pages into PNG or JPEG.</dd>
+            </dl>
+          </div>
+        </div>
+
+        <figure class="feature-shot">
+          <img src="assets/crop-editor.webp" width="798" height="543" loading="lazy" decoding="async"
+               alt="Kumo's crop editor showing a photo of a strawberry with crop handles, composition guides and aspect ratio presets">
+          <figcaption>The crop editor. Drag the frame, or pick a ratio; the original is left untouched.</figcaption>
+        </figure>
+
+        <div class="principles">
+          <p>
+            <strong>Your files stay on your PC.</strong>
+            Everything is processed locally and nothing is uploaded. Kumo never overwrites an original; it writes new
+            files beside it, or to a folder you choose.
+          </p>
+          <p>
+            <strong>Not there yet.</strong>
+            Video, audio, HEIC, TIFF, Word documents, PDF text extraction and image resizing are not supported in this
+            version.
+          </p>
+        </div>
+      </section>
+
+      <section class="open-source" aria-labelledby="oss-title">
+        <div class="wrap oss-inner">
+          <h2 id="oss-title">Open source</h2>
+          <p>
+            Kumo is free and released under the MIT License. The code, the issue tracker and every release live on
+            GitHub. Bug reports and pull requests are welcome.
+          </p>
+          <p><a class="text-link" href="{{repository}}">{{repositoryLabel}}</a></p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-inner">
+        <span class="footer-brand">Kumo {{version}}</span>
+        <ul>
+          <li><a href="{{repository}}">GitHub</a></li>
+          <li><a href="{{releases}}">Releases</a></li>
+          <li><a href="{{license}}">License</a></li>
+        </ul>
+      </div>
+    </footer>
+  </body>
+</html>
