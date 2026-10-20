@@ -2,7 +2,8 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
-  background: #fff;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 .desktop {
@@ -44,7 +45,7 @@
   border-radius: 4px;
   background: none;
   font: inherit;
-  color: var(--ink);
+  color: var(--desktop-ink);
   cursor: default;
 }
 
@@ -53,7 +54,7 @@ button.icon {
 }
 
 button.icon:hover {
-  background: rgba(255, 255, 255, 0.45);
+  background: color-mix(in srgb, var(--desktop-ink) 9%, transparent);
 }
 
 .selected,
@@ -547,7 +548,7 @@ button.icon.selected:hover {
   padding: 0.35rem 0.8rem;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   color: var(--ink);
   cursor: pointer;

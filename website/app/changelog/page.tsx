@@ -14,7 +14,7 @@ export default async function Changelog() {
 
   return (
     <>
-      <div className="page-head">
+      <div className="page-head sky sky-soft">
         <div className="wrap">
           <h1 className="page-title">Changelog</h1>
           <p>

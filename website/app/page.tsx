@@ -1,36 +1,42 @@
+import Landscape from "@/components/Landscape";
 import DesktopDemo from "@/components/DesktopDemo";
+import PlatformStatus from "@/components/PlatformStatus";
 import { links, site } from "@/lib/site";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGithub, faWindows } from "@fortawesome/free-brands-svg-icons";
 
 export default function Home() {
   return (
     <>
-      <section className="hero wrap" aria-labelledby="hero-title">
-        <div className="hero-text">
-          <p className="eyebrow">A small utility for Windows</p>
-          <h1 id="hero-title">
-            Your files.
-            <br />A little easier.
-          </h1>
-          <p className="lede">
-            Kumo puts everyday file actions in a radial menu that opens where you are already working. Drag files in File
-            Explorer, tap <kbd>Shift</kbd>, and release on what you want done.
-          </p>
-          <div className="actions" id="download">
-            <a className="button button-primary" href={links.downloadX64}>
-              Download for Windows
-            </a>
-            <a className="button button-secondary" href={links.repository}>
-              View on GitHub
-            </a>
+      <div className="sky">
+        <section className="hero wrap" aria-labelledby="hero-title">
+          <div className="hero-text">
+            <p className="eyebrow">A small utility for Windows</p>
+            <h1 id="hero-title">
+              Your files.
+              <br />A little easier.
+            </h1>
+            <p className="lede">
+              Kumo puts everyday file actions in a radial menu that opens where you are already working. Drag files in File
+              Explorer, tap <kbd>Shift</kbd>, and release on what you want done.
+            </p>
+            <div className="actions" id="download">
+              <a className="button button-primary" href={links.downloadX64}>
+                <FontAwesomeIcon icon={faWindows} aria-hidden="true" />
+                Download for Windows
+              </a>
+              <a className="button button-secondary" href={links.repository}>
+                <FontAwesomeIcon icon={faGithub} aria-hidden="true" />
+                View on GitHub
+              </a>
+            </div>
+            <PlatformStatus />
           </div>
-          <p className="release-meta">
-            Version {site.version} · Windows 10 and 11 · 64-bit · <a href={links.downloadArm64}>ARM64 installer</a> ·{" "}
-            <a href="/changelog/">What&apos;s new</a>
-          </p>
-        </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="hero-mascot" src="/assets/kumo.webp" width={240} height={211} alt="Kumo, a small cloud wearing an orange scarf" />
-      </section>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="hero-mascot" src="/assets/kumo.webp" width={240} height={211} alt="Kumo, a small cloud wearing an orange scarf" />
+        </section>
+        <Landscape />
+      </div>
 
       <section className="demo" aria-labelledby="demo-title">
         <div className="wrap">

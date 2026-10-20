@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { links } from "@/lib/site";
+import ThemeToggle from "./ThemeToggle";
 
 export default function SiteHeader() {
   return (
@@ -18,13 +19,16 @@ export default function SiteHeader() {
             <li>
               <Link href="/changelog/">Changelog</Link>
             </li>
-            <li>
+            <li className="nav-github">
               <a href={links.repository}>GitHub</a>
             </li>
             <li>
               <Link className="nav-download" href="/#download">
                 Download
               </Link>
+            </li>
+            <li>
+              <ThemeToggle />
             </li>
           </ul>
         </nav>
