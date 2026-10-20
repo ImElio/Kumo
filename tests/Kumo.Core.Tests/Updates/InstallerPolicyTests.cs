@@ -27,4 +27,33 @@ public class InstallerPolicyTests
     {
         Assert.False(InstallerPolicy.Accept(trusted, subject, expected, productVersion, Offered));
     }
+
+    [Fact]
+    public void An_unsigned_installer_declaring_the_offered_version_is_accepted_after_the_checksum()
+    {
+        Assert.True(InstallerPolicy.AcceptChecked(Offered.ToString(), Offered));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("0.1.0")]
+    [InlineData("9.9.9")]
+    [InlineData("not a version")]
+    public void An_unsigned_installer_with_another_version_is_rejected(string? productVersion)
+    {
+        Assert.False(InstallerPolicy.AcceptChecked(productVersion, Offered));
+    }
+
+    [Theory]
+    [InlineData(UpdateCapability.InstallVerified, true, true)]
+    [InlineData(UpdateCapability.InstallChecked, true, true)]
+    [InlineData(UpdateCapability.NotifyOnly, true, false)]
+    [InlineData(UpdateCapability.StoreManaged, false, false)]
+    [InlineData(UpdateCapability.Unconfigured, false, false)]
+    public void Capabilities_decide_checking_and_installing(UpdateCapability capability, bool checks, bool installs)
+    {
+        Assert.Equal(checks, capability.ChecksForUpdates());
+        Assert.Equal(installs, capability.InstallsUpdates());
+    }
 }

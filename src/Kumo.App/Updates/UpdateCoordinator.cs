@@ -54,13 +54,13 @@ internal sealed class UpdateCoordinator : IDisposable
     }
 
     /// <summary>
-    /// Downloads the installer for <paramref name="release"/>, checks it against the published SHA-256 list, then
-    /// requires a valid Authenticode signature from the configured publisher and a matching product version.
-    /// The checksum only detects corruption; the signature is what authenticates the file.
+    /// Downloads the installer for <paramref name="release"/>, checks it against the published SHA-256 list and
+    /// requires a matching product version. When the build names a publisher, a valid Authenticode signature from
+    /// that publisher is required too; only the signature authenticates the file.
     /// </summary>
     public async Task<string> DownloadVerifiedInstallerAsync(UpdateRelease release, IProgress<DownloadProgress> progress, CancellationToken cancellationToken)
     {
-        if (Service.Capability != UpdateCapability.InstallVerified)
+        if (!Service.Capability.InstallsUpdates())
             throw new UpdateException(UpdateErrorKind.Unsupported, "This copy of Kumo can't install updates by itself.");
 
         var asset = ReleaseAssets.For(release, InstallationKind.Installer, Environment.Architecture)
@@ -76,8 +76,20 @@ internal sealed class UpdateCoordinator : IDisposable
         string directory = Path.Combine(_downloads, release.Version.ToShortString());
         string path = await downloader.DownloadAsync(asset, expected, directory, progress, cancellationToken).ConfigureAwait(false);
 
-        var signature = Authenticode.Verify(path);
         string? productVersion = FileVersionInfo.GetVersionInfo(path).ProductVersion;
+        if (Service.Capability == UpdateCapability.InstallChecked)
+        {
+            if (!InstallerPolicy.AcceptChecked(productVersion, release.Version))
+            {
+                _log.Warning("Downloaded installer rejected", ("productVersion", productVersion));
+                TryDelete(path);
+                throw new UpdateException(UpdateErrorKind.Integrity, "The downloaded installer is not the offered version, so it wasn't run.");
+            }
+            _log.Info("Installer checked", ("version", release.Version.ToString()), ("signed", false));
+            return path;
+        }
+
+        var signature = Authenticode.Verify(path);
         if (!InstallerPolicy.Accept(signature.IsTrusted, signature.Subject, Environment.ExpectedPublisher, productVersion, release.Version))
         {
             _log.Warning("Downloaded installer rejected", ("trusted", signature.IsTrusted), ("status", signature.Status),
@@ -89,10 +101,13 @@ internal sealed class UpdateCoordinator : IDisposable
         return path;
     }
 
-    /// <summary>Starts the verified installer as a separate, non-elevated process; the caller then exits Kumo.</summary>
+    /// <summary>
+    /// Starts the installer silently as a separate, non-elevated process; it closes this Kumo, updates the files and
+    /// starts the new version. The caller then exits Kumo.
+    /// </summary>
     public void LaunchInstaller(string path)
     {
-        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(path)! });
+        Process.Start(new ProcessStartInfo(path, "/S /relaunch") { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(path)! });
         _log.Info("Installer launched");
     }
 

@@ -91,6 +91,16 @@ Function .onInit
   Call CheckRuntime
 FunctionEnd
 
+; Kumo's updater runs the installer with /S /relaunch after closing itself, so the new version starts on its own.
+Function .onInstSuccess
+  ${GetParameters} $R0
+  ClearErrors
+  ${GetOptions} $R0 "/relaunch" $R1
+  ${IfNot} ${Errors}
+    Exec '"$INSTDIR\Kumo.exe"'
+  ${EndIf}
+FunctionEnd
+
 ; Uninstall deletes the whole install folder, so the folder must be a dedicated "Kumo" folder that is either new,
 ; empty, or already holds Kumo. This keeps a mistyped path like C:\Users\me\Documents from ever being emptied.
 ; Silent installs skip the directory page, so the check also runs in .onInit and at the start of the install.

@@ -60,7 +60,7 @@ internal sealed class KumoApplication : Application
 
     internal Log Log => _log;
 
-    private bool UpdatesUsable => _updates?.Service.Capability is UpdateCapability.NotifyOnly or UpdateCapability.InstallVerified;
+    private bool UpdatesUsable => _updates?.Service.Capability.ChecksForUpdates() == true;
 
     protected override void OnStartup(StartupEventArgs e)
     {

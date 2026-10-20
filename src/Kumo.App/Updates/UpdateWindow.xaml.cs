@@ -41,7 +41,7 @@ public partial class UpdateWindow : Window
     {
         string version = release.Version.ToShortString();
         var actions = new List<Button>();
-        if (_updates.Service.Capability == UpdateCapability.InstallVerified)
+        if (_updates.Service.Capability.InstallsUpdates())
             actions.Add(Button("Update", async () => await DownloadAsync(release), primary: true));
         else
             actions.Add(Button("Download", () => Open(release.PageUrl), primary: true));
@@ -78,7 +78,10 @@ public partial class UpdateWindow : Window
         {
             string installer = await _updates.DownloadVerifiedInstallerAsync(release, progress, _download.Token);
             ProgressPanel.Visibility = Visibility.Collapsed;
-            ShowReady(installer, release);
+            if (_isBusy())
+                ShowReady(installer, release);
+            else
+                Install(installer, release);
         }
         catch (OperationCanceledException)
         {
@@ -102,7 +105,7 @@ public partial class UpdateWindow : Window
     private void ShowReady(string installer, UpdateRelease release)
     {
         ShowState(MascotState.Success, "Ready to install",
-            $"Kumo {release.Version.ToShortString()} is verified. Kumo will close while the installer runs; your settings are kept.",
+            $"Kumo {release.Version.ToShortString()} is verified. Kumo will restart by itself; your settings are kept.",
             Button("Later", Close),
             Button("Install now", () =>
             {
@@ -111,9 +114,15 @@ public partial class UpdateWindow : Window
                     Detail.Text = "Kumo is still working on files. Install once it has finished.";
                     return;
                 }
-                _updates.LaunchInstaller(installer);
-                _exitForInstall();
+                Install(installer, release);
             }, primary: true));
+    }
+
+    private void Install(string installer, UpdateRelease release)
+    {
+        ShowState(MascotState.Processing, $"Installing Kumo {release.Version.ToShortString()}", "Kumo will restart in a moment.");
+        _updates.LaunchInstaller(installer);
+        _exitForInstall();
     }
 
     private void ShowState(MascotState mascot, string headline, string detail, params Button[] actions)

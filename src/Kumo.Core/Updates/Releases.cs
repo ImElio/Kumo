@@ -152,4 +152,11 @@ public static class InstallerPolicy
         && string.Equals(signerSubject, expectedPublisher, StringComparison.Ordinal)
         && SemVersion.TryParse(productVersion, out var fileVersion)
         && fileVersion.Equals(offered);
+
+    /// <summary>
+    /// For builds without a configured publisher: the installer already matched the release's SHA-256 list, and must
+    /// also declare exactly the offered version, so a renamed older installer is never run as an update.
+    /// </summary>
+    public static bool AcceptChecked(string? productVersion, SemVersion offered) =>
+        SemVersion.TryParse(productVersion, out var fileVersion) && fileVersion.Equals(offered);
 }

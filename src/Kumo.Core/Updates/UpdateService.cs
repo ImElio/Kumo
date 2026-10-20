@@ -17,6 +17,13 @@ public enum UpdateCapability
 
     /// <summary>Kumo downloads, verifies and launches the signed installer.</summary>
     InstallVerified,
+
+    /// <summary>
+    /// Kumo downloads the installer, checks it against the release's SHA-256 list and its declared version, and runs
+    /// it. Without a signature this detects corrupted or swapped downloads but does not authenticate the publisher:
+    /// whoever can publish a release in the repository can ship an installer.
+    /// </summary>
+    InstallChecked,
 }
 
 /// <param name="ExpectedPublisher">Certificate subject the installer must be signed by; empty disables installation.</param>
@@ -33,8 +40,20 @@ public sealed record UpdateEnvironment(
         InstallationKind.Store => UpdateCapability.StoreManaged,
         _ when Repository is null => UpdateCapability.Unconfigured,
         InstallationKind.Installer when ExpectedPublisher.Length > 0 => UpdateCapability.InstallVerified,
+        InstallationKind.Installer => UpdateCapability.InstallChecked,
         _ => UpdateCapability.NotifyOnly,
     };
+}
+
+public static class UpdateCapabilities
+{
+    /// <summary>Kumo checks GitHub for new versions.</summary>
+    public static bool ChecksForUpdates(this UpdateCapability capability) =>
+        capability is UpdateCapability.NotifyOnly or UpdateCapability.InstallVerified or UpdateCapability.InstallChecked;
+
+    /// <summary>Kumo downloads and runs the installer itself.</summary>
+    public static bool InstallsUpdates(this UpdateCapability capability) =>
+        capability is UpdateCapability.InstallVerified or UpdateCapability.InstallChecked;
 }
 
 public enum UpdateStatus
@@ -230,7 +249,7 @@ public sealed class UpdateService
     {
         var before = Status;
         bool goesOnline = manual || IsAutomaticCheckDue();
-        if (goesOnline && Capability is UpdateCapability.NotifyOnly or UpdateCapability.InstallVerified)
+        if (goesOnline && Capability.ChecksForUpdates())
             Publish(new UpdateCheckResult(UpdateStatus.Checking, "Checking for updates…"));
 
         UpdateCheckResult result;

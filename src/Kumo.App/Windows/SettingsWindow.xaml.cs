@@ -69,7 +69,7 @@ public partial class SettingsWindow : Window
         CurrentVersionText.Text = $"Kumo {updates.Version}";
         InstallationText.Text = $"Installation source: {updates.InstallationSource}";
 
-        bool usable = updates.Service.Capability is UpdateCapability.NotifyOnly or UpdateCapability.InstallVerified;
+        bool usable = updates.Service.Capability.ChecksForUpdates();
         UpdateChannelBox.IsEnabled = usable;
         AutomaticUpdates.IsEnabled = usable;
         ShowChannel(_settings.UpdateChannel);

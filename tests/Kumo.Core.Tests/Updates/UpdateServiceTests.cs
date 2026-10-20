@@ -79,7 +79,7 @@ public sealed class UpdateServiceTests : IDisposable
     [Theory]
     [InlineData(InstallationKind.Portable, "", UpdateCapability.NotifyOnly)]
     [InlineData(InstallationKind.SideloadedPackage, "", UpdateCapability.NotifyOnly)]
-    [InlineData(InstallationKind.Installer, "", UpdateCapability.NotifyOnly)]
+    [InlineData(InstallationKind.Installer, "", UpdateCapability.InstallChecked)]
     [InlineData(InstallationKind.Installer, "CN=Kumo", UpdateCapability.InstallVerified)]
     [InlineData(InstallationKind.Portable, "CN=Kumo", UpdateCapability.NotifyOnly)]
     [InlineData(InstallationKind.Store, "CN=Kumo", UpdateCapability.StoreManaged)]
