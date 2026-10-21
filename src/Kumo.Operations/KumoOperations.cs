@@ -9,6 +9,10 @@ public static class KumoOperations
 {
     public const int MinimumPasswordLength = PdfProtectOperation.MinimumPasswordLength;
 
+    /// <summary>Returns selected PDFs that require a user password to be imported into a combined document.</summary>
+    public static IReadOnlyList<InputFile> FindPasswordProtectedPdfs(IReadOnlyList<InputFile> files) =>
+        PdfMergeOperation.FindPasswordProtectedInputs(files);
+
     /// <summary>Every operation Kumo ships, in the order entries appear within a category.</summary>
     public static IReadOnlyList<IFileOperation> CreateAll() =>
     [

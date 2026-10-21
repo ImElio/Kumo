@@ -573,7 +573,8 @@ internal sealed class OverlayController : IDisposable
 
     private async Task<OperationOptions?> AskForInput(MenuEntry entry, IReadOnlyList<InputFile> files)
     {
-        if (entry.Requirement == InputRequirement.None || _window == null)
+        bool mergePdfs = entry.Operations[0].Id == "pdf.merge";
+        if ((entry.Requirement == InputRequirement.None && !mergePdfs) || _window == null)
             return OperationOptions.None;
         int fileCount = files.Count;
 
@@ -601,6 +602,22 @@ internal sealed class OverlayController : IDisposable
         _app.SetPointerTracking(false);
         try
         {
+            if (mergePdfs)
+            {
+                var protectedInputs = await Task.Run(() => PdfMergeProtectedInputs(files));
+                var passwords = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var input in protectedInputs)
+                {
+                    if (_window == null || _phase != Phase.Menu)
+                        return null;
+                    string? password = InputDialog.AskUnlockPassword(_window, theme, input.Name);
+                    if (password == null)
+                        return null;
+                    passwords[input.Path] = password;
+                }
+                return new OperationOptions(PdfPasswords: passwords);
+            }
+
             return entry.Requirement switch
             {
                 InputRequirement.PageRange => InputDialog.AskPageRange(_window, theme, fileCount) is { } range ? new OperationOptions(PageRange: range) : null,
@@ -614,6 +631,9 @@ internal sealed class OverlayController : IDisposable
             _app.SetPointerTracking(_phase != Phase.Hidden);
         }
     }
+
+    private static IReadOnlyList<InputFile> PdfMergeProtectedInputs(IReadOnlyList<InputFile> files) =>
+        Kumo.Operations.KumoOperations.FindPasswordProtectedPdfs(files);
 
     private void ShowResult(Job job, BatchResult result)
     {

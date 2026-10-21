@@ -40,6 +40,31 @@ internal sealed class PdfMergeOperation : PdfOperation
 
     public override int MinimumFiles => 2;
 
+    public static IReadOnlyList<InputFile> FindPasswordProtectedInputs(IReadOnlyList<InputFile> inputs)
+    {
+        var protectedInputs = new List<InputFile>();
+        foreach (var input in inputs)
+        {
+            try
+            {
+                using var document = PdfFiles.Open(input, OperationLimits.Default);
+            }
+            catch (OperationFailedException ex) when (ex.Kind == OperationErrorKind.Encrypted)
+            {
+                protectedInputs.Add(input);
+            }
+            catch (OperationFailedException)
+            {
+                // Corrupt and oversized files are reported by the actual merge with the normal operation result.
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Read failures are reported by the actual merge with the normal operation result.
+            }
+        }
+        return protectedInputs;
+    }
+
     public override async Task<OperationResult> ExecuteAsync(IReadOnlyList<InputFile> inputs, OperationContext context, CancellationToken cancellationToken)
     {
         var ordered = PdfFiles.NaturalOrder(inputs);
@@ -47,7 +72,9 @@ internal sealed class PdfMergeOperation : PdfOperation
         for (int i = 0; i < ordered.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            using var source = PdfFiles.Open(ordered[i], context.Limits);
+            string? password = null;
+            context.Options.PdfPasswords?.TryGetValue(ordered[i].Path, out password);
+            using var source = PdfFiles.Open(ordered[i], context.Limits, password: password);
             if (merged.PageCount + source.PageCount > context.Limits.MaxPdfPages)
                 throw OperationErrors.TooLarge($"The merged document would exceed Kumo's limit of {context.Limits.MaxPdfPages} pages.");
             foreach (var page in source.Pages)

@@ -8,12 +8,14 @@ namespace Kumo.Operations.Pdf;
 internal static class PdfFiles
 {
     /// <summary>Opens a PDF for importing pages, translating library failures into user-facing errors.</summary>
-    public static PdfDocument Open(InputFile file, OperationLimits limits, PdfDocumentOpenMode mode = PdfDocumentOpenMode.Import)
+    public static PdfDocument Open(InputFile file, OperationLimits limits, PdfDocumentOpenMode mode = PdfDocumentOpenMode.Import, string? password = null)
     {
         PdfDocument document;
         try
         {
-            document = PdfReader.Open(file.Path, mode);
+            document = password is null
+                ? PdfReader.Open(file.Path, mode)
+                : PdfReader.Open(file.Path, password, mode);
         }
         catch (Exception ex) when (ex is not (IOException or UnauthorizedAccessException or OperationCanceledException))
         {

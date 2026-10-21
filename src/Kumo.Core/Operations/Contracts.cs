@@ -26,7 +26,11 @@ public enum InputRequirement
 }
 
 /// <param name="Crop">Region chosen in the crop editor as fractions of the image, so every image in a batch is cut the same way.</param>
-public sealed record OperationOptions(string? PageRange = null, string? Password = null, CropRect? Crop = null)
+public sealed record OperationOptions(
+    string? PageRange = null,
+    string? Password = null,
+    CropRect? Crop = null,
+    IReadOnlyDictionary<string, string>? PdfPasswords = null)
 {
     public static OperationOptions None { get; } = new();
 }

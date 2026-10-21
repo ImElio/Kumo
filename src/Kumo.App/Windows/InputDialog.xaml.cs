@@ -10,12 +10,14 @@ public partial class InputDialog : Window
 {
     private readonly InputRequirement _requirement;
     private readonly int _minimumPasswordLength;
+    private readonly bool _confirmPassword;
 
-    private InputDialog(InputRequirement requirement, string title, string prompt, string confirm, int minimumPasswordLength)
+    private InputDialog(InputRequirement requirement, string title, string prompt, string confirm, int minimumPasswordLength, bool confirmPassword = true, string? hint = null)
     {
         InitializeComponent();
         _requirement = requirement;
         _minimumPasswordLength = minimumPasswordLength;
+        _confirmPassword = confirmPassword;
         Title = title;
         Prompt.Text = prompt;
         ConfirmButton.Content = confirm;
@@ -23,7 +25,9 @@ public partial class InputDialog : Window
         if (requirement == InputRequirement.Password)
         {
             PasswordInputs.Visibility = Visibility.Visible;
-            Hint.Text = $"At least {minimumPasswordLength} characters. Kumo cannot recover a forgotten password.";
+            ConfirmationLabel.Visibility = confirmPassword ? Visibility.Visible : Visibility.Collapsed;
+            Confirmation.Visibility = confirmPassword ? Visibility.Visible : Visibility.Collapsed;
+            Hint.Text = hint ?? $"At least {minimumPasswordLength} characters. Kumo cannot recover a forgotten password.";
             Loaded += (_, _) => Password.Focus();
         }
         else
@@ -46,6 +50,10 @@ public partial class InputDialog : Window
     public static string? AskPassword(Window owner, ThemeMode theme, int minimumLength) =>
         Show(new InputDialog(InputRequirement.Password, "Protect PDF", "Choose a password for the protected copy.", "Protect", minimumLength), owner, theme);
 
+    public static string? AskUnlockPassword(Window owner, ThemeMode theme, string fileName) =>
+        Show(new InputDialog(InputRequirement.Password, "Unlock PDF", $"Enter the password for {fileName} to include it in the merged PDF.", "Continue", 0,
+            confirmPassword: false, hint: "The merged PDF will be saved without a password."), owner, theme);
+
     private static string? Show(InputDialog dialog, Window owner, ThemeMode theme)
     {
         if (!SystemParameters.HighContrast)
@@ -61,9 +69,9 @@ public partial class InputDialog : Window
         string? error = null;
         if (_requirement == InputRequirement.Password)
         {
-            if (Password.Password.Length < _minimumPasswordLength)
+            if (_minimumPasswordLength > 0 && Password.Password.Length < _minimumPasswordLength)
                 error = $"Use at least {_minimumPasswordLength} characters.";
-            else if (Password.Password != Confirmation.Password)
+            else if (_confirmPassword && Password.Password != Confirmation.Password)
                 error = "The passwords don't match.";
             else
                 Value = Password.Password;
