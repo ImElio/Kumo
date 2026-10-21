@@ -114,7 +114,7 @@ internal sealed class OverlayController : IDisposable
                 break;
 
             case InputSignal.PointerDown:
-                if (_phase != Phase.Hidden && _window != null && !_window.ContainsScreenPoint(input.Position))
+                if (_phase is Phase.AwaitingFiles or Phase.Menu or Phase.Result && _window != null && !_window.ContainsScreenPoint(input.Position))
                     Hide("outside-click");
                 break;
         }
