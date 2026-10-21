@@ -1,4 +1,6 @@
 import Landscape from "@/components/Landscape";
+import DemoInvite from "@/components/DemoInvite";
+import HowItWorks from "@/components/HowItWorks";
 import Doodle from "@/components/Doodle";
 import { links } from "@/lib/site";
 
@@ -10,7 +12,14 @@ export default function Home() {
           <div className="hero-text">
             <h1 id="hero-title">
               Your files.
-              <br />A little <span className="scribble">easier</span>.
+              <br />A little{" "}
+              <span className="scribble">
+                easier
+                <svg className="scribble-line" viewBox="0 0 300 24" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                  <path d="M4 16c30-9 58-11 88-6s54 9 86 2 70-12 96-6c12 3 18 6 22 8" pathLength={1} />
+                </svg>
+              </span>
+              .
             </h1>
             <p className="lede">
               Kumo puts everyday file actions in a radial menu that opens where you are already working. Drag files in File
@@ -33,41 +42,13 @@ export default function Home() {
         <Landscape />
       </div>
 
-      <section className="demo" aria-labelledby="how-title">
+      <div className="demo">
         <div className="wrap demo-details">
-          <h2 id="how-title">How it works</h2>
-          <ol className="steps">
-            <li>
-              <span className="step-title">Start dragging.</span> Pick up one or more files in File Explorer or on the
-              desktop.
-            </li>
-            <li>
-              <span className="step-title">Tap Shift.</span> Kumo&apos;s menu appears under the pointer, showing only what
-              works for those files.
-            </li>
-            <li>
-              <span className="step-title">Release on an action.</span> Results are saved as new files next to the
-              originals.
-            </li>
-            <li className="aside-step">
-              Holding Shift instead of tapping it keeps Windows&apos; usual move behaviour. You can also press{" "}
-              <kbd>Ctrl</kbd>&nbsp;<kbd>Alt</kbd>&nbsp;<kbd>K</kbd> for the files selected in Explorer, or open Kumo from the
-              notification area.
-            </li>
-          </ol>
-          <div className="try-demo">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/mascot/idle.png" width={64} height={64} alt="" />
-            <p>
-              <strong>Want to try it first?</strong> There&apos;s a pretend Windows desktop with a few sample pictures and
-              PDFs. Drag one and tap <kbd>Shift</kbd>.
-            </p>
-            <a className="button button-secondary" href="/demo/">
-              Open the demo
-            </a>
-          </div>
+          <HowItWorks />
         </div>
-      </section>
+      </div>
+
+      <DemoInvite />
 
       <section className="features wrap" id="features" aria-labelledby="features-title">
         <h2 id="features-title">What Kumo can do</h2>

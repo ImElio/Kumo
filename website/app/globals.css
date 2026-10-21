@@ -280,7 +280,6 @@ h3 {
 .drift {
   position: absolute;
   fill: var(--drift);
-  animation: drift 38s ease-in-out infinite alternate;
 }
 
 .drift-one {
@@ -293,14 +292,41 @@ h3 {
   left: 58%;
   top: 4%;
   width: clamp(46px, 4.5vw, 72px);
-  animation-duration: 46s;
-  animation-direction: alternate-reverse;
+}
+
+.drift-three {
+  left: 30%;
+  top: 34%;
+  width: clamp(36px, 3.4vw, 54px);
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .drift-one { animation: drift 34s ease-in-out infinite alternate, bob 7s ease-in-out infinite; }
+  .drift-two { animation: drift-back 42s ease-in-out infinite alternate, bob 9s ease-in-out -3s infinite; }
+  .drift-three { animation: drift 26s ease-in-out -8s infinite alternate, bob 6s ease-in-out -1s infinite; }
+  .sun { animation: glow 6s ease-in-out infinite; }
+  .star { animation: twinkle 4s ease-in-out infinite; }
 }
 
 @keyframes drift {
-  to {
-    transform: translateX(48px);
-  }
+  to { translate: 14vw 0; }
+}
+
+@keyframes drift-back {
+  to { translate: -12vw 0; }
+}
+
+@keyframes bob {
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes glow {
+  50% { scale: 1.06; filter: brightness(1.05); }
+}
+
+@keyframes twinkle {
+  50% { opacity: 0.25; scale: 0.7; }
 }
 
 .star {
@@ -437,50 +463,8 @@ h1 {
   padding-block: clamp(3.5rem, 8vw, 6rem);
 }
 
-.demo-details > * {
-  max-width: 48rem;
-}
-
 .demo-details h2 {
   margin-bottom: 1.75rem;
-}
-
-.try-demo {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  margin-top: 2.5rem;
-  padding: 1.25rem 1.5rem;
-  border: 1.5px dashed var(--line-strong);
-  border-radius: 18px 14px 20px 13px / 14px 20px 13px 18px;
-}
-
-.try-demo img {
-  flex: none;
-  width: 64px;
-  height: 64px;
-}
-
-.try-demo p {
-  flex: 1;
-  margin: 0;
-  color: var(--ink-soft);
-}
-
-.try-demo strong {
-  display: block;
-  color: var(--ink);
-}
-
-.try-demo .button {
-  flex: none;
-}
-
-/* The demo is a desktop with a mouse and keyboard; on a phone it would only get in the way. */
-@media (max-width: 760px) {
-  .try-demo {
-    display: none;
-  }
 }
 
 .real-shot {
@@ -508,42 +492,6 @@ figcaption {
 
 h2 {
   font-size: clamp(1.75rem, 3.6vw, 2.5rem);
-}
-
-.steps {
-  list-style: none;
-  counter-reset: step;
-  margin: 0;
-  padding: 0;
-}
-
-.steps li {
-  counter-increment: step;
-  position: relative;
-  padding: 0 0 1.4rem 2.75rem;
-  color: var(--ink-soft);
-}
-
-.steps li::before {
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: 0.05rem;
-  width: 1.75rem;
-  height: 1.75rem;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--accent);
-  border-radius: 50%;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--accent-ink);
-}
-
-.step-title {
-  display: block;
-  color: var(--ink);
-  font-weight: 600;
 }
 
 .aside {
@@ -849,18 +797,6 @@ h2 {
   }
 }
 
-.steps li.aside-step {
-  counter-increment: none;
-  margin-top: 0.25rem;
-  padding: 1.25rem 0 0;
-  border-top: 1px solid var(--line);
-  font-size: 0.95rem;
-}
-
-.steps li.aside-step::before {
-  content: none;
-}
-
 .page-title {
   font-size: clamp(2.5rem, 6vw, 3.75rem);
 }
@@ -909,8 +845,7 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-mascot,
-  .drift {
+  .hero-mascot {
     animation: none;
   }
 }
@@ -960,25 +895,36 @@ h2 {
   white-space: nowrap;
 }
 
-.scribble::after {
-  content: "";
+.scribble-line {
   position: absolute;
-  left: -2%;
-  right: -2%;
-  bottom: -0.12em;
-  height: 0.28em;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 24' preserveAspectRatio='none'%3E%3Cpath d='M4 16c30-9 58-11 88-6s54 9 86 2 70-12 96-6c12 3 18 6 22 8' fill='none' stroke='%23e8742b' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  left: -3%;
+  bottom: -0.16em;
   z-index: -1;
+  width: 106%;
+  height: 0.32em;
+  overflow: visible;
 }
 
-.steps li::before {
-  border-width: 1.5px;
-  border-radius: 52% 48% 55% 45% / 46% 56% 44% 54%;
-  transform: rotate(-4deg);
+.scribble-line path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 7;
+  stroke-linecap: round;
+  filter: url(#ink);
 }
 
-.steps li:nth-child(2)::before {
-  transform: rotate(6deg);
+/* Drawn in by hand once, when the page opens. */
+@media (prefers-reduced-motion: no-preference) {
+  .scribble-line path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: scribble 0.9s cubic-bezier(0.55, 0.1, 0.3, 1) 0.5s forwards;
+  }
+}
+
+@keyframes scribble {
+  70% { stroke-dashoffset: 0.08; }
+  to { stroke-dashoffset: 0; }
 }
 
 .button {

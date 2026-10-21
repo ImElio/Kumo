@@ -1,0 +1,340 @@
+.invite {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(4.5rem, 10vw, 8rem);
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
+}
+
+/* A soft sun behind the little monitor. */
+.invite::before {
+  content: "";
+  position: absolute;
+  left: 18%;
+  top: 50%;
+  width: min(60vw, 720px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--sun-glow), transparent 65%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2.5rem, 6vw, 5rem);
+}
+
+.copy h2 {
+  margin: 0 0 1rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  text-wrap: balance;
+}
+
+.copy p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.copy ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 1.1rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+}
+
+.copy li {
+  position: relative;
+  padding-left: 1.6rem;
+}
+
+.copy li::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.3em;
+  width: 0.45rem;
+  height: 0.8rem;
+  border: solid var(--accent);
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(40deg);
+}
+
+.go {
+  margin-top: 1.5rem;
+  min-height: 3.2rem;
+  padding-inline: 1.4rem;
+}
+
+.go span {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.go:hover span {
+  transform: translateX(4px);
+}
+
+/* A small copy of the demo desktop. Sizes are in container units: the screen is 100cqw by 62.5cqw. */
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  transform: rotate(-1deg);
+  transition: transform 0.4s cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.inner:hover .preview {
+  transform: rotate(0deg) translateY(-6px);
+}
+
+.monitor {
+  display: block;
+  width: 100%;
+  padding: 8px 8px 16px;
+  border-radius: 16px 14px 17px 13px / 14px 17px 13px 16px;
+  background: linear-gradient(180deg, #3a3532, #26221f);
+  box-shadow: 0 24px 40px -22px rgba(60, 25, 5, 0.6);
+}
+
+.stand {
+  width: 70px;
+  height: 24px;
+  background: linear-gradient(180deg, #2a2623, #3d3834);
+  clip-path: polygon(32% 0, 68% 0, 76% 76%, 100% 84%, 100% 100%, 0 100%, 0 84%, 24% 76%);
+}
+
+.screen {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--wall-top), var(--wall-bottom));
+  container-type: inline-size;
+}
+
+.wall {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sun { fill: var(--sun); }
+.hillBack { fill: var(--wall-1); }
+.hillFront { fill: var(--wall-2); }
+
+.icons {
+  position: absolute;
+  left: 3cqw;
+  top: 3cqw;
+  display: grid;
+  gap: 1.6cqw;
+}
+
+.icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6cqw;
+  width: 13cqw;
+  padding: 0.6cqw 0;
+  border-radius: 0.8cqw;
+}
+
+.icon img,
+.pdf {
+  width: 6cqw;
+  height: 6cqw;
+  max-width: none;
+  border-radius: 0.5cqw;
+  object-fit: cover;
+  box-shadow: 0 0.3cqw 0.6cqw rgba(0, 0, 0, 0.25);
+}
+
+.pdf {
+  display: grid;
+  place-items: center;
+  width: 4.8cqw;
+  background: linear-gradient(#fff 0 42%, #d93a2b 42% 72%, #fff 72%);
+  color: #fff;
+  font-size: 1.3cqw;
+}
+
+.icon i {
+  color: #fff;
+  font-size: 1.6cqw;
+  font-style: normal;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.note {
+  position: absolute;
+  right: 4cqw;
+  top: 4cqw;
+  display: grid;
+  gap: 0.7cqw;
+  width: 24cqw;
+  padding: 1.6cqw 1.8cqw;
+  border-radius: 0.4cqw 0.4cqw 1.6cqw 0.4cqw;
+  background: linear-gradient(180deg, #fff1b8, #fde89a);
+  color: #3a3124;
+  font-size: 1.5cqw;
+  box-shadow: 0 1.2cqw 2cqw -1cqw rgba(60, 35, 10, 0.55);
+  transform: rotate(2deg);
+}
+
+.note b {
+  font-size: 1.8cqw;
+}
+
+.note span {
+  position: relative;
+  padding-left: 2.6cqw;
+}
+
+.note span::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.2cqw;
+  width: 1.4cqw;
+  height: 1.4cqw;
+  border: 1.5px solid rgba(58, 49, 36, 0.55);
+  border-radius: 0.3cqw;
+}
+
+.tick::after {
+  content: "";
+  position: absolute;
+  left: 0.4cqw;
+  top: -0.4cqw;
+  width: 0.7cqw;
+  height: 1.5cqw;
+  border: solid #e8742b;
+  border-width: 0 0.4cqw 0.4cqw 0;
+  transform: rotate(40deg);
+}
+
+.viewer {
+  position: absolute;
+  left: 22cqw;
+  top: 12cqw;
+  width: 40cqw;
+  overflow: hidden;
+  border-radius: 1cqw;
+  background: #1f1c1b;
+  box-shadow: 0 2cqw 4cqw rgba(0, 0, 0, 0.45);
+  opacity: 0;
+}
+
+.viewerBar {
+  display: block;
+  padding: 0.8cqw 1.4cqw;
+  background: #f7f4f1;
+  color: #1c1a19;
+  font-size: 1.4cqw;
+}
+
+.viewer img {
+  display: block;
+  width: 100%;
+  max-width: none;
+  padding: 1.4cqw;
+}
+
+.cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2.8cqw;
+  fill: #fff;
+  stroke: #1c1a19;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0.2cqw 0.25cqw rgba(0, 0, 0, 0.35));
+  transform: translate(50cqw, 40cqw);
+}
+
+.taskbar {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4cqw;
+  height: 6cqw;
+  background: color-mix(in srgb, #f3eee9 88%, transparent);
+}
+
+.taskbar i {
+  width: 2.6cqw;
+  height: 2.6cqw;
+  border-radius: 0.5cqw;
+  background: #3b8fd9;
+}
+
+.taskbar i:nth-child(2) { background: #f5c043; }
+.taskbar i:nth-child(3) { background: var(--accent); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cursor { animation: cursor 9s infinite; }
+  .berry { animation: picked 9s infinite; }
+  .viewer { animation: viewer 9s infinite cubic-bezier(0.2, 0.75, 0.25, 1); }
+  .tick::after { animation: tick 9s infinite; }
+}
+
+/* One loop: the pointer double-clicks strawberry.jpg, the picture opens, and the note ticks it off. */
+
+@keyframes cursor {
+  0% { transform: translate(50cqw, 40cqw); animation-timing-function: cubic-bezier(0.45, 0.05, 0.3, 1); }
+  16% { transform: translate(9cqw, 7cqw); }
+  19% { transform: translate(9cqw, 7cqw) scale(0.8); }
+  20% { transform: translate(9cqw, 7cqw); }
+  21% { transform: translate(9cqw, 7cqw) scale(0.8); }
+  22% { transform: translate(9cqw, 7cqw); animation-timing-function: cubic-bezier(0.45, 0.05, 0.3, 1); }
+  40% { transform: translate(54cqw, 34cqw); }
+  64% { transform: translate(54cqw, 34cqw); animation-timing-function: cubic-bezier(0.45, 0.05, 0.3, 1); }
+  78% { transform: translate(84cqw, 9cqw); }
+  90% { transform: translate(84cqw, 9cqw); animation-timing-function: cubic-bezier(0.45, 0.05, 0.3, 1); }
+  100% { transform: translate(50cqw, 40cqw); }
+}
+
+@keyframes picked {
+  0%, 15% { background: transparent; }
+  17%, 30% { background: rgba(59, 143, 217, 0.35); }
+  33%, 100% { background: transparent; }
+}
+
+@keyframes viewer {
+  0%, 23% { opacity: 0; transform: scale(0.85); }
+  27%, 60% { opacity: 1; transform: none; }
+  64%, 100% { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes tick {
+  0%, 28% { opacity: 0; transform: rotate(40deg) scale(0.3); }
+  32%, 94% { opacity: 1; transform: rotate(40deg); }
+  98%, 100% { opacity: 0; transform: rotate(40deg) scale(0.3); }
+}
+
+/* The demo needs a mouse and keyboard, so phones don't get the invitation. */
+@media (max-width: 760px) {
+  .invite {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

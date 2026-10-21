@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import DownloadPicker from "@/components/DownloadPicker";
 import Landscape from "@/components/Landscape";
 import { site } from "@/lib/site";
@@ -16,9 +15,6 @@ export default function Download() {
         <div className="wrap download-head">
           <h1>Download</h1>
           <p className="download-sub">Pick your system to get started</p>
-          <p className="download-version">
-            Kumo {site.version} · <Link href="/changelog/">What&apos;s new</Link>
-          </p>
         </div>
         <Landscape />
       </div>
