@@ -114,6 +114,11 @@ internal sealed class OverlayController : IDisposable
                 break;
 
             case InputSignal.PointerDown:
+                if (HasAttachedRunningJob)
+                {
+                    _app.Log.Debug("Pointer dismissal ignored while a job is running", ("session", _session));
+                    break;
+                }
                 if (_phase is Phase.AwaitingFiles or Phase.Menu or Phase.Result && _window != null && !_window.ContainsScreenPoint(input.Position))
                     Hide("outside-click");
                 break;
@@ -697,6 +702,12 @@ internal sealed class OverlayController : IDisposable
 
     private void Hide(string reason)
     {
+        if (HasAttachedRunningJob)
+        {
+            _app.Log.Debug("Overlay dismissal ignored while a job is running", ("session", _session), ("reason", reason));
+            return;
+        }
+
         StopTimers();
         DetachJob();
         if (_window != null)
@@ -722,6 +733,8 @@ internal sealed class OverlayController : IDisposable
             _attachedJob = null;
         }
     }
+
+    private bool HasAttachedRunningJob => _attachedJob is { Attached: true, Completion.IsCompleted: false };
 
     private void StopTimers()
     {
