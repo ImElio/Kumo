@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Kumo.Core.Updates;
 
 namespace Kumo.App.Updates;
@@ -17,6 +18,8 @@ internal static class ReleaseNotesView
 {
     private const long MaxImageBytes = 8 * 1024 * 1024;
     private const int MaxRedirects = 3;
+    private const int MaxAnimatedImageWidth = 480;
+    private const int MaxAnimationFrames = 120;
 
     private static readonly FontFamily Mono = new("Cascadia Mono, Consolas");
     private static readonly Lazy<HttpClient> Http = new(() =>
@@ -92,26 +95,28 @@ internal static class ReleaseNotesView
 
     private static async Task LoadAsync(Border frame, TextBlock status, Uri url, string? alt)
     {
-        BitmapSource? bitmap = null;
+        DecodedImage? decoded = null;
         try
         {
             byte[]? bytes = await DownloadImageAsync(url).ConfigureAwait(true);
             if (bytes != null)
-                bitmap = Decode(bytes);
+                decoded = await Task.Run(() => Decode(bytes)).ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException or NotSupportedException or FileFormatException or InvalidOperationException or ArgumentException)
         {
             // A screenshot that cannot be shown must not affect the rest of the notes.
         }
 
-        if (bitmap == null)
+        if (decoded == null)
         {
             status.Text = alt is { Length: > 0 } ? $"Screenshot unavailable: {alt}" : "Screenshot unavailable";
             return;
         }
-        var image = new Image { Source = bitmap, Stretch = Stretch.Uniform, MaxWidth = bitmap.PixelWidth, Cursor = System.Windows.Input.Cursors.Hand };
+        var image = new Image { Source = decoded.Frames[0], Stretch = Stretch.Uniform, MaxWidth = decoded.Frames[0].PixelWidth, Cursor = System.Windows.Input.Cursors.Hand };
         RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
         image.MouseLeftButtonUp += (_, _) => Process.Start(new ProcessStartInfo(url.AbsoluteUri) { UseShellExecute = true });
+        if (decoded.Frames.Length > 1)
+            _ = new GifAnimation(image, decoded.Frames, decoded.Delays);
         frame.Child = image;
     }
 
@@ -154,18 +159,103 @@ internal static class ReleaseNotesView
         return null;
     }
 
-    private static BitmapSource Decode(byte[] bytes)
+    private sealed record DecodedImage(BitmapSource[] Frames, TimeSpan[] Delays);
+
+    private static DecodedImage Decode(byte[] bytes)
     {
-        int width = BitmapDecoder.Create(new MemoryStream(bytes), BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None).Frames[0].PixelWidth;
-        var bitmap = new BitmapImage();
-        bitmap.BeginInit();
-        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-        bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-        bitmap.DecodePixelWidth = Math.Min(width, 1200);
-        bitmap.StreamSource = new MemoryStream(bytes);
-        bitmap.EndInit();
-        bitmap.Freeze();
-        return bitmap;
+        using var stream = new MemoryStream(bytes);
+        var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.OnLoad);
+        if (decoder is GifBitmapDecoder gif && gif.Frames.Count is > 1 and <= MaxAnimationFrames && SystemParameters.ClientAreaAnimation)
+        {
+            var frames = new BitmapSource[gif.Frames.Count];
+            var delays = new TimeSpan[gif.Frames.Count];
+            for (int i = 0; i < gif.Frames.Count; i++)
+            {
+                var frame = gif.Frames[i];
+                frames[i] = ScaleFrame(frame, MaxAnimatedImageWidth);
+                delays[i] = FrameDelay(frame);
+            }
+            return new DecodedImage(frames, delays);
+        }
+
+        var firstFrame = decoder.Frames[0];
+        int maxWidth = decoder is GifBitmapDecoder ? MaxAnimatedImageWidth : 1200;
+        return new DecodedImage([ScaleFrame(firstFrame, maxWidth)], [TimeSpan.Zero]);
+    }
+
+    private static BitmapSource ScaleFrame(BitmapSource frame, int maxWidth)
+    {
+        if (frame.PixelWidth <= maxWidth)
+        {
+            if (!frame.IsFrozen)
+                frame.Freeze();
+            return frame;
+        }
+
+        int width = maxWidth;
+        int height = (int)Math.Round(frame.PixelHeight * (double)width / frame.PixelWidth);
+        var visual = new DrawingVisual();
+        using (var drawing = visual.RenderOpen())
+            drawing.DrawImage(frame, new Rect(0, 0, width, height));
+
+        var scaled = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        scaled.Render(visual);
+        scaled.Freeze();
+        return scaled;
+    }
+
+    private static TimeSpan FrameDelay(BitmapFrame frame)
+    {
+        if (frame.Metadata is BitmapMetadata metadata && metadata.ContainsQuery("/grctlext/Delay"))
+        {
+            try
+            {
+                int hundredths = Convert.ToInt32(metadata.GetQuery("/grctlext/Delay"), System.Globalization.CultureInfo.InvariantCulture);
+                if (hundredths > 0)
+                    return TimeSpan.FromMilliseconds(Math.Max(20, hundredths * 10));
+            }
+            catch (Exception ex) when (ex is FormatException or InvalidCastException or NotSupportedException or InvalidOperationException)
+            {
+                // Some GIF encoders omit or store frame timing in a form WIC doesn't expose.
+            }
+        }
+        return TimeSpan.FromMilliseconds(100);
+    }
+
+    private sealed class GifAnimation
+    {
+        private readonly DispatcherTimer _timer = new(DispatcherPriority.Render);
+        private readonly Image _image;
+        private readonly BitmapSource[] _frames;
+        private readonly TimeSpan[] _delays;
+        private int _index;
+
+        public GifAnimation(Image image, BitmapSource[] frames, TimeSpan[] delays)
+        {
+            _image = image;
+            _frames = frames;
+            _delays = delays;
+            _timer.Tick += OnTick;
+            _image.Loaded += OnLoaded;
+            _image.Unloaded += OnUnloaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            _index = 0;
+            _image.Source = _frames[_index];
+            _timer.Interval = _delays[_index];
+            _timer.Start();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e) => _timer.Stop();
+
+        private void OnTick(object? sender, EventArgs e)
+        {
+            _index = (_index + 1) % _frames.Length;
+            _image.Source = _frames[_index];
+            _timer.Interval = _delays[_index];
+        }
     }
 
     private static void AddInlines(InlineCollection target, IReadOnlyList<NotesInline> inlines)
