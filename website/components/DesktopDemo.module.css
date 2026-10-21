@@ -3,6 +3,41 @@
   margin-inline: auto;
 }
 
+.immersiveDemo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(100%, 1500px);
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  margin-inline: auto;
+}
+
+.immersiveDemo .monitor {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.immersiveDemo .screen {
+  flex: 1;
+  min-height: 0;
+}
+
+.immersiveDemo .desktop {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.immersiveDemo .bar {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
 .monitor {
   padding: 14px 14px 26px;
   border-radius: 22px 20px 24px 19px / 20px 24px 19px 22px;
@@ -137,23 +172,19 @@
 }
 
 .icons {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 1;
   list-style: none;
   margin: 0;
-  padding: 14px 10px;
-  display: grid;
-  grid-template-rows: repeat(4, 86px);
-  grid-auto-flow: column;
-  grid-auto-columns: 92px;
-  gap: 4px;
-  height: 100%;
+  padding: 0;
   pointer-events: none;
 }
 
-.icons li {
-  pointer-events: auto;
+.iconSlot {
+  position: absolute;
   width: 92px;
+  pointer-events: auto;
 }
 
 .icon {
@@ -211,14 +242,6 @@ button.icon.selected:hover {
   overflow-wrap: anywhere;
 }
 
-.thumb {
-  width: 48px;
-  height: 48px;
-  object-fit: cover;
-  border-radius: 3px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-  pointer-events: none;
-}
 
 .pdf {
   display: grid;
@@ -267,7 +290,7 @@ button.icon.selected:hover {
 
 .menu {
   position: absolute;
-  z-index: 2;
+  z-index: 900;
   animation: open 0.14s ease-out;
 }
 
@@ -440,7 +463,7 @@ button.icon.selected:hover {
   text-align: center;
 }
 
-.picture {
+.blankPicture {
   width: 48px;
   height: 40px;
   margin-top: 8px;
@@ -452,7 +475,7 @@ button.icon.selected:hover {
 .scrim {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: 950;
   display: grid;
   place-items: center;
   padding: 16px;
@@ -557,13 +580,6 @@ button.icon.selected:hover {
   cursor: crosshair;
 }
 
-.cropStage img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  pointer-events: none;
-}
 
 .cropFrame {
   position: absolute;
@@ -707,5 +723,768 @@ button.icon.selected:hover {
 
   .monitor {
     padding: 10px 10px 22px;
+  }
+}
+
+@media (max-height: 680px) {
+  .immersiveDemo .monitor {
+    padding: 8px 8px 18px;
+    border-radius: 14px;
+  }
+
+  .immersiveDemo .stand {
+    height: 28px;
+  }
+
+  .immersiveDemo .bar {
+    padding-block: 0.35rem;
+  }
+}
+
+/* Pictures as they are now: a crop of the source, then a rotation. */
+
+.picture {
+  position: relative;
+  display: block;
+  flex: none;
+  pointer-events: none;
+}
+
+.thumbPicture {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.view {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.viewFrame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  overflow: hidden;
+}
+
+.viewFrame img {
+  position: absolute;
+  max-width: none;
+}
+
+.txt {
+  position: relative;
+  width: 38px;
+  height: 48px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(180deg, transparent 0 9px, #b9c3cc 9px 10px) 7px 12px / 24px 30px no-repeat, #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.pdf {
+  position: relative;
+}
+
+.pdfBadge {
+  position: absolute;
+  right: -7px;
+  bottom: -5px;
+  width: 18px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 50%;
+  background: #2c2826;
+  color: #f2c230;
+}
+
+.renameInput {
+  width: 100%;
+  padding: 1px 3px;
+  border: 1px solid #3b8fd9;
+  border-radius: 2px;
+  background: #fff;
+  color: #1c1a19;
+  font: 12px/1.3 var(--font);
+  text-align: center;
+  outline: none;
+}
+
+/* Windows */
+
+.window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  background: #f7f4f1;
+  color: #1c1a19;
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15);
+  animation: open 0.14s ease-out;
+}
+
+:global([data-theme="dark"]) .window {
+  background: #2b2725;
+  color: #efe7df;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .window {
+    background: #2b2725;
+    color: #efe7df;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.windowBar {
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: 34px;
+  padding-left: 12px;
+  cursor: default;
+  user-select: none;
+  touch-action: none;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.windowActive .windowBar {
+  opacity: 1;
+}
+
+.windowTitle {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.windowClose {
+  width: 44px;
+  height: 34px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.windowClose:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+.windowClose:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.windowBody {
+  position: relative;
+  overflow: auto;
+  user-select: text;
+}
+
+.imageViewer {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  background: #1f1c1b;
+}
+
+.viewerNote {
+  margin: 0;
+  padding: 24px;
+  font-size: 13px;
+  opacity: 0.75;
+  text-align: center;
+}
+
+.pdfViewer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-height: 100%;
+  padding: 16px 0 20px;
+  background: #e7e3df;
+}
+
+:global([data-theme="dark"]) .pdfViewer {
+  background: #1f1c1b;
+}
+
+.pdfPage {
+  display: grid;
+  place-items: center;
+  position: relative;
+  flex: none;
+  margin: 0;
+  padding: 16px 16px 32px;
+  background: #fff;
+  color: #6b6560;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.pdfPage figcaption {
+  position: absolute;
+  bottom: 8px;
+  font-size: 11px;
+}
+
+.pdfText {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  align-self: start;
+  width: 100%;
+}
+
+.pdfText b {
+  width: 55%;
+  height: 12px;
+  margin-bottom: 6px;
+  border-radius: 3px;
+  background: #4a4541;
+}
+
+.pdfText i {
+  height: 6px;
+  border-radius: 3px;
+  background: #d8d3ce;
+}
+
+.pdfLock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 24px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.pdfLock p {
+  margin: 0;
+}
+
+.pdfLock input {
+  width: min(100%, 220px);
+  padding: 6px 9px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+  font: inherit;
+}
+
+.pdfLock button {
+  padding: 6px 18px;
+  border: 0;
+  border-radius: 5px;
+  background: #3b8fd9;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lockIcon {
+  width: 34px;
+  height: 34px;
+  color: #c9862f;
+}
+
+.textEditor {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: inherit;
+  font: 13px/1.55 "Cascadia Mono", Consolas, ui-monospace, monospace;
+  outline: none;
+}
+
+.folderView {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 12px;
+  list-style: none;
+}
+
+.folderItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 96px;
+  padding: 8px 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: 11.5px/1.25 var(--font);
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: default;
+}
+
+.folderItem:hover,
+.folderItem:focus-visible {
+  background: rgba(59, 143, 217, 0.14);
+  border-color: rgba(59, 143, 217, 0.35);
+  outline: none;
+}
+
+/* Paint */
+
+.paint {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.paintTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.swatch,
+.brush {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.brush {
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.brush i {
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.swatchOn {
+  border-color: #3b8fd9;
+}
+
+.paintGap {
+  width: 8px;
+}
+
+.paintButton {
+  padding: 4px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.6);
+  color: #1c1a19;
+  font: 12px var(--font);
+  cursor: pointer;
+}
+
+.paintSave {
+  margin-left: auto;
+  border-color: transparent;
+  background: #3b8fd9;
+  color: #fff;
+}
+
+.paintCanvas {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  object-fit: contain;
+  background: #d9d4cf;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.paintIcon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: conic-gradient(#e8742b 0 25%, #3b82c4 0 50%, #3f9e5a 0 75%, #f2c230 0);
+}
+
+/* Context menu and taskbar windows */
+
+.contextMenu {
+  position: absolute;
+  z-index: 1000;
+  min-width: 190px;
+  padding: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  background: #f9f7f5;
+  color: #1c1a19;
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+}
+
+:global([data-theme="dark"]) .contextMenu {
+  background: #2b2725;
+  color: #efe7df;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.contextMenu button {
+  display: block;
+  width: 100%;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.contextMenu button:hover,
+.contextMenu button:focus-visible {
+  background: rgba(59, 143, 217, 0.16);
+  outline: none;
+}
+
+.contextMenu hr {
+  margin: 4px 6px;
+  border: 0;
+  border-top: 1px solid rgba(127, 127, 127, 0.25);
+}
+
+.taskWindow {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 32px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  position: relative;
+  cursor: default;
+}
+
+.taskWindow:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.taskWindow::after {
+  content: "";
+  position: absolute;
+  bottom: 1px;
+  width: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: #8a8580;
+}
+
+.taskWindowOn::after {
+  width: 14px;
+  background: #3b8fd9;
+}
+
+.taskWindow .pdf,
+.taskWindow .txt,
+.taskWindow .folder {
+  transform: scale(0.42);
+}
+
+/* Arrival: icons appear one after another when the desktop is shown. */
+
+.iconWaiting {
+  opacity: 0;
+}
+
+.iconArrive {
+  animation: iconArrive 0.45s cubic-bezier(0.2, 0.75, 0.25, 1.2) both;
+}
+
+@keyframes iconArrive {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+    scale: 0.85;
+  }
+}
+
+/* Things to try: a sticky note on the desktop. */
+
+.tips {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  z-index: 5;
+  width: 236px;
+  padding: 14px 16px 14px;
+  border-radius: 3px 3px 14px 3px;
+  background: linear-gradient(180deg, #fff1b8, #fde89a);
+  color: #3a3124;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12), 0 12px 22px -10px rgba(60, 35, 10, 0.55);
+  font-size: 12.5px;
+  line-height: 1.4;
+  transform: rotate(1.6deg);
+  animation: tipsArrive 0.5s cubic-bezier(0.2, 0.75, 0.25, 1.15) 0.6s both;
+  user-select: none;
+}
+
+.tips::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 70px;
+  height: 20px;
+  margin-left: -35px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transform: rotate(-3deg);
+}
+
+.tipsTitle {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tips ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tips li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.tips kbd {
+  padding: 0 4px;
+  border: 1px solid rgba(58, 49, 36, 0.35);
+  border-bottom-width: 2px;
+  background: rgba(255, 255, 255, 0.6);
+  color: inherit;
+  font: 600 11px/1.4 var(--font);
+}
+
+.tipBox {
+  position: relative;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border: 1.5px solid rgba(58, 49, 36, 0.55);
+  border-radius: 4px 3px 4px 2px;
+}
+
+.tipDone > span:last-child {
+  text-decoration: line-through;
+  text-decoration-color: rgba(232, 116, 43, 0.8);
+  text-decoration-thickness: 2px;
+  opacity: 0.7;
+}
+
+.tipDone .tipBox::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: -5px;
+  width: 7px;
+  height: 13px;
+  border: solid #e8742b;
+  border-width: 0 3px 3px 0;
+  border-radius: 1px;
+  transform: rotate(40deg);
+  animation: tick 0.25s ease-out;
+}
+
+.tipsFinished {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1.5px dashed rgba(58, 49, 36, 0.3);
+}
+
+.tipsFinished a {
+  color: #a94a0c;
+  font-weight: 650;
+}
+
+.tipsClose {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font-size: 17px;
+  line-height: 1;
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.tipsClose:hover,
+.tipsClose:focus-visible {
+  background: rgba(58, 49, 36, 0.1);
+  opacity: 1;
+  outline: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes tipsArrive {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) rotate(-4deg);
+  }
+}
+
+@keyframes tick {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+}
+
+/* Welcome notification, like a Windows toast above the clock. */
+
+.toast {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 800;
+  width: min(320px, calc(100% - 24px));
+  padding: 10px 12px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: #f9f7f5;
+  color: #1c1a19;
+  box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.45);
+  animation: toastIn 0.4s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+:global([data-theme="dark"]) .toast {
+  background: #2b2725;
+  color: #efe7df;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .toast {
+    background: #2b2725;
+    color: #efe7df;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.toastHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  opacity: 0.75;
+}
+
+.toastHead button {
+  margin-left: auto;
+  width: 24px;
+  height: 22px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.toastHead button:hover,
+.toastHead button:focus-visible {
+  background: rgba(127, 127, 127, 0.18);
+  outline: none;
+}
+
+.toastBody {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.toastBody img {
+  flex: none;
+}
+
+.toastBody strong {
+  font-size: 13.5px;
+}
+
+.toastBody p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  opacity: 0.8;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+
+.barButtons {
+  display: flex;
+  flex: none;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .tips {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iconArrive,
+  .tips,
+  .toast,
+  .tipDone .tipBox::after {
+    animation: none;
   }
 }

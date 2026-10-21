@@ -2,21 +2,34 @@
 // src/Kumo.Core/Operations (OperationRegistry, Summaries, PageRange, OutputNaming), src/Kumo.Core/Radial/RadialMenuModel
 // and src/Kumo.Operations. Nothing is converted; the demo only creates the files Kumo would write.
 
-export type Kind = "png" | "jpeg" | "webp" | "bmp" | "gif" | "pdf";
+export type Kind = "png" | "jpeg" | "webp" | "bmp" | "gif" | "pdf" | "txt";
 export type Category = "Convert" | "Crop" | "Compress" | "Rotate" | "Merge" | "Split" | "Extract" | "Protect";
 export type Requirement = "none" | "crop" | "pages" | "password";
 
+export type CropRegion = { x: number; y: number; width: number; height: number };
+
+/** How an edited picture is shown: a crop of the source picture, then a clockwise rotation. */
+export type ImageView = { rotation: number; crop: CropRegion };
+
 export type DemoFile = {
+  id: string;
   name: string;
   kind: Kind | "folder";
   /** Page count of a PDF. */
   pages?: number;
-  /** Picture used for the icon and the crop editor, and its size in pixels. */
+  /** The pictures on the pages of a PDF made from images, in page order. */
+  pageImages?: (DemoFile | null)[];
+  /** Picture used for the icon and the viewers, and its size in pixels as it is now (after crops and rotations). */
   image?: { thumb: string; full: string; width: number; height: number };
+  view?: ImageView;
+  text?: string;
+  password?: string;
+  children?: DemoFile[];
+  /** Position on the desktop, in pixels. */
+  x?: number;
+  y?: number;
   fresh?: boolean;
 };
-
-export type CropRegion = { x: number; y: number; width: number; height: number };
 export type Options = { crop?: CropRegion; pages?: string; password?: string };
 
 type Outcome = { outputs: DemoFile[]; failure?: string; note?: string };
@@ -36,12 +49,17 @@ export type MenuEntry = { category: Category; label: string; description: string
 
 const CATEGORY_ORDER: Category[] = ["Convert", "Crop", "Compress", "Rotate", "Merge", "Split", "Extract", "Protect"];
 
-const extension: Record<Kind, string> = { png: ".png", jpeg: ".jpg", webp: ".webp", bmp: ".bmp", gif: ".gif", pdf: ".pdf" };
+const extension: Record<Kind, string> = { png: ".png", jpeg: ".jpg", webp: ".webp", bmp: ".bmp", gif: ".gif", pdf: ".pdf", txt: ".txt" };
 export const displayName = (kind: Kind) => (kind === "jpeg" ? "JPG" : kind.toUpperCase());
 
 const decodable = (f: DemoFile) => f.kind === "png" || f.kind === "jpeg" || f.kind === "webp" || f.kind === "bmp" || f.kind === "gif";
 const isPdf = (f: DemoFile) => f.kind === "pdf";
 const sameFormat = (kind: Kind): Kind => (kind === "gif" ? "png" : kind);
+let counter = 0;
+export const newId = () => `f${++counter}`;
+
+const pageNumber = (page: number, count: number) => String(page).padStart(Math.max(3, String(count).length), "0");
+
 export const stem = (name: string) => (name.includes(".") ? name.slice(0, name.lastIndexOf(".")) : name);
 export const kindOf = (name: string): Kind | "folder" => {
   const ext = name.includes(".") ? name.slice(name.lastIndexOf(".")).toLowerCase() : "";
@@ -50,13 +68,45 @@ export const kindOf = (name: string): Kind | "folder" => {
 };
 
 const file = (source: DemoFile, name: string, kind: Kind, extra: Partial<DemoFile> = {}): DemoFile => ({
+  id: newId(),
   name,
   kind,
   image: kind === "pdf" ? undefined : source.image,
+  view: kind === "pdf" ? undefined : source.view,
   pages: kind === "pdf" ? (source.pages ?? 1) : undefined,
+  pageImages: kind === "pdf" ? source.pageImages : undefined,
   ...extra,
 });
-const folder = (name: string): DemoFile => ({ name, kind: "folder" });
+export const folder = (name: string, children: DemoFile[] = []): DemoFile => ({ id: newId(), name, kind: "folder", children });
+
+const pagePicture = (pdf: DemoFile, index: number) => pdf.pageImages?.[index] ?? null;
+
+/** The view after rotating clockwise by a quarter turn or more. */
+function rotated(f: DemoFile, degrees: number): Partial<DemoFile> {
+  if (!f.image) return {};
+  const quarter = degrees % 180 !== 0;
+  const view = f.view ?? { rotation: 0, crop: { x: 0, y: 0, width: 1, height: 1 } };
+  return {
+    image: quarter ? { ...f.image, width: f.image.height, height: f.image.width } : f.image,
+    view: { ...view, rotation: (view.rotation + degrees) % 360 },
+  };
+}
+
+/** The view after cropping a region of what is shown now, mapped back onto the source picture. */
+function cropped(f: DemoFile, r: CropRegion, width: number, height: number): Partial<DemoFile> {
+  const view = f.view ?? { rotation: 0, crop: { x: 0, y: 0, width: 1, height: 1 } };
+  const u0 = r.x, u1 = r.x + r.width, v0 = r.y, v1 = r.y + r.height;
+  const box =
+    view.rotation === 90 ? { x: v0, y: 1 - u1, width: v1 - v0, height: u1 - u0 }
+    : view.rotation === 180 ? { x: 1 - u1, y: 1 - v1, width: u1 - u0, height: v1 - v0 }
+    : view.rotation === 270 ? { x: 1 - v1, y: u0, width: v1 - v0, height: u1 - u0 }
+    : r;
+  const c = view.crop;
+  return {
+    image: { ...f.image!, width, height },
+    view: { rotation: view.rotation, crop: { x: c.x + box.x * c.width, y: c.y + box.y * c.height, width: box.width * c.width, height: box.height * c.height } },
+  };
+}
 
 const perFile = (fn: (f: DemoFile, options: Options) => Outcome) => (files: DemoFile[], options: Options) => {
   const results = files.map((f) => fn(f, options));
@@ -87,9 +137,20 @@ const render = (target: "png" | "jpeg"): Operation => ({
   combined: false,
   minimumFiles: 1,
   supports: isPdf,
-  run: perFile((f) => ({
-    outputs: [(f.pages ?? 1) === 1 ? file(f, `${stem(f.name)}${extension[target]}`, target, { image: undefined }) : folder(`${stem(f.name)} (images)`)],
-  })),
+  run: perFile((f) => {
+    const count = f.pages ?? 1;
+    const page = (i: number, name: string) => {
+      const picture = pagePicture(f, i);
+      return file(f, name, target, { image: picture?.image, view: picture?.view });
+    };
+    return {
+      outputs: [
+        count === 1
+          ? page(0, `${stem(f.name)}${extension[target]}`)
+          : folder(`${stem(f.name)} (images)`, Array.from({ length: count }, (_, i) => page(i, `${stem(f.name)} - page ${pageNumber(i + 1, count)}${extension[target]}`))),
+      ],
+    };
+  }),
 });
 
 const compress = (label: string, description: string, lossless: boolean): Operation => ({
@@ -113,7 +174,7 @@ const rotate = (degrees: 90 | 270 | 180): Operation => ({
   supports: decodable,
   run: perFile((f) => {
     const kind = sameFormat(f.kind as Kind);
-    return { outputs: [file(f, `${stem(f.name)} (rotated)${extension[kind]}`, kind)] };
+    return { outputs: [file(f, `${stem(f.name)} (rotated)${extension[kind]}`, kind, rotated(f, degrees))] };
   }),
 });
 
@@ -133,7 +194,7 @@ const operations: Operation[] = [
     combined: false,
     minimumFiles: 1,
     supports: decodable,
-    run: perFile((f) => ({ outputs: [file(f, `${stem(f.name)}.pdf`, "pdf", { pages: 1 })] })),
+    run: perFile((f) => ({ outputs: [file(f, `${stem(f.name)}.pdf`, "pdf", { pages: 1, pageImages: [f] })] })),
   },
   render("png"),
   render("jpeg"),
@@ -152,7 +213,7 @@ const operations: Operation[] = [
       const py = Math.max(1, Math.round(crop!.height * h));
       if (px >= w && py >= h) return { outputs: [], note: `The crop area covers all of ${f.name}.` };
       const kind = sameFormat(f.kind as Kind);
-      return { outputs: [file(f, `${stem(f.name)} (cropped ${px}×${py})${extension[kind]}`, kind)] };
+      return { outputs: [file(f, `${stem(f.name)} (cropped ${px}×${py})${extension[kind]}`, kind, cropped(f, crop!, px, py))] };
     }),
   },
   compress("High quality", "Compress (high quality)", false),
@@ -172,7 +233,9 @@ const operations: Operation[] = [
     supports: isPdf,
     run: (files) => {
       const first = naturalOrder(files)[0];
-      return { outputs: [file(first, `${stem(first.name)} (merged).pdf`, "pdf", { pages: files.reduce((n, f) => n + (f.pages ?? 1), 0) })] };
+      const ordered = naturalOrder(files);
+      const pageImages = ordered.flatMap((f) => Array.from({ length: f.pages ?? 1 }, (_, i) => pagePicture(f, i)));
+      return { outputs: [file(first, `${stem(first.name)} (merged).pdf`, "pdf", { pages: pageImages.length, pageImages })] };
     },
   },
   {
@@ -185,7 +248,7 @@ const operations: Operation[] = [
     supports: decodable,
     run: (files) => {
       const first = naturalOrder(files)[0];
-      return { outputs: [file(first, `${stem(first.name)} (combined).pdf`, "pdf", { pages: files.length })] };
+      return { outputs: [file(first, `${stem(first.name)} (combined).pdf`, "pdf", { pages: files.length, pageImages: naturalOrder(files) })] };
     },
   },
   {
@@ -196,7 +259,13 @@ const operations: Operation[] = [
     combined: false,
     minimumFiles: 1,
     supports: isPdf,
-    run: perFile((f) => ((f.pages ?? 1) === 1 ? { outputs: [], note: `${f.name} has only one page.` } : { outputs: [folder(`${stem(f.name)} (pages)`)] })),
+    run: perFile((f) => {
+      const count = f.pages ?? 1;
+      if (count === 1) return { outputs: [], note: `${f.name} has only one page.` };
+      const pages = Array.from({ length: count }, (_, i) =>
+        file(f, `${stem(f.name)} - page ${pageNumber(i + 1, count)}.pdf`, "pdf", { pages: 1, pageImages: [pagePicture(f, i)] }));
+      return { outputs: [folder(`${stem(f.name)} (pages)`, pages)] };
+    }),
   },
   {
     category: "Extract",
@@ -210,7 +279,7 @@ const operations: Operation[] = [
       const parsed = parsePages(pages ?? "", f.pages ?? 1);
       if ("error" in parsed) return { outputs: [], failure: parsed.error };
       const range = (pages ?? "").replace(/ /g, "").slice(0, 40);
-      return { outputs: [file(f, `${stem(f.name)} (pages ${range}).pdf`, "pdf", { pages: parsed.pages.length })] };
+      return { outputs: [file(f, `${stem(f.name)} (pages ${range}).pdf`, "pdf", { pages: parsed.pages.length, pageImages: parsed.pages.map((p) => pagePicture(f, p - 1)) })] };
     }),
   },
   {
@@ -221,13 +290,14 @@ const operations: Operation[] = [
     combined: false,
     minimumFiles: 1,
     supports: isPdf,
-    run: perFile((f) => ({ outputs: [file(f, `${stem(f.name)} (protected).pdf`, "pdf")] })),
+    run: perFile((f, { password }) => ({ outputs: [file(f, `${stem(f.name)} (protected).pdf`, "pdf", { password })] })),
   },
 ];
 
 /** OperationRegistry.EntriesFor: combined actions for the whole selection, and per-file actions every file supports. */
 export function entriesFor(files: DemoFile[]): MenuEntry[] {
-  if (files.length === 0) return [];
+  // OperationRegistry: a file Kumo cannot read means no action for the whole selection.
+  if (files.length === 0 || files.some((f) => f.kind === "txt")) return [];
   const entries: (MenuEntry & { order: number })[] = [];
   operations.forEach((op, index) => {
     if (op.combined && files.every(op.supports) && files.length >= op.minimumFiles)
@@ -291,6 +361,8 @@ export function selectionText(files: DemoFile[]) {
 
 export function unavailableText(files: DemoFile[], includedFolders: boolean) {
   if (files.length === 0) return includedFolders ? "Kumo works with files, not folders." : "Kumo couldn't read these files.";
+  const unknown = files.find((f) => f.kind === "txt");
+  if (unknown) return `Kumo doesn't support ${unknown.name.slice(unknown.name.lastIndexOf(".") + 1).toUpperCase()} files yet.`;
   return new Set(files.map((f) => f.kind)).size > 1
     ? "These files have no action in common. Try them separately."
     : `There's nothing Kumo can do with ${displayName(files[0].kind as Kind)} files yet.`;
@@ -384,9 +456,15 @@ const toPage = (text: string) => (/^\d+$/.test(text) && Number(text) >= 1 ? Numb
 export const MINIMUM_PASSWORD_LENGTH = 4;
 
 export const initialDesktop = (): DemoFile[] => [
-  { name: "strawberry.jpg", kind: "jpeg", image: { thumb: "/demo/strawberry-thumb.webp", full: "/demo/strawberry.webp", width: 760, height: 415 } },
-  { name: "clouds.webp", kind: "webp", image: { thumb: "/demo/clouds-thumb.webp", full: "/demo/clouds.webp", width: 744, height: 153 } },
-  { name: "logo.png", kind: "png", image: { thumb: "/demo/logo.webp", full: "/demo/logo.webp", width: 256, height: 256 } },
-  { name: "notes.pdf", kind: "pdf", pages: 3 },
-  { name: "invoice.pdf", kind: "pdf", pages: 1 },
+  { id: "strawberry", name: "strawberry.jpg", kind: "jpeg", image: { thumb: "/demo/strawberry-thumb.webp", full: "/demo/strawberry.webp", width: 752, height: 407 } },
+  { id: "invoice", name: "invoice.pdf", kind: "pdf", pages: 1 },
+  { id: "clouds", name: "clouds.webp", kind: "webp", image: { thumb: "/demo/clouds-thumb.webp", full: "/demo/clouds.webp", width: 744, height: 153 } },
+  { id: "logo", name: "logo.png", kind: "png", image: { thumb: "/demo/logo.webp", full: "/demo/logo.webp", width: 256, height: 256 } },
+  { id: "notes", name: "notes.pdf", kind: "pdf", pages: 3 },
+  {
+    id: "readme",
+    name: "readme.txt",
+    kind: "txt",
+    text: "Welcome to the Kumo demo desktop!\n\nDouble-click files to open them, drag them around, right-click for new files.\nTo use Kumo, start dragging files and tap Shift.\n",
+  },
 ];

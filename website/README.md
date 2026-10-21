@@ -1,7 +1,8 @@
 # Kumo website
 
 The Kumo website, built with Next.js as a fully static export: no server, no database, nothing to run in production.
-Pages: the home page with an interactive demo of the radial menu, and a changelog read from the GitHub releases.
+Pages: the home page, a download page at `/download/`, a full-window interactive desktop at `/demo/`, and a changelog read
+from GitHub releases.
 
 ```powershell
 cd website
@@ -14,8 +15,9 @@ npm run build    # static site in out/
 
 ## New release
 
-1. Edit `lib/site.ts`: `version` and `releaseTag` (`windows/v<version>`). The download buttons point to the
-   `Kumo-<version>-win-x64-setup.exe` and `-win-arm64-setup.exe` assets of that release.
+1. Edit `lib/site.ts`: `version` and `releaseTag` (`windows/v<version>`). The download page points to the
+   `Kumo-<version>-win-x64-setup.exe` and `-win-arm64-setup.exe` assets of that release. It reads
+   the visitor's system in the browser to offer the right installer, and shows both when it isn't Windows.
 2. Update the feature list in `app/page.tsx` and the demo rules in `lib/kumo.ts` only for what the release ships.
 3. Rebuild. The changelog is read from the GitHub API during the build, so it includes every published
    `windows/v*` release, newest version first by SemVer. Set `GITHUB_TOKEN` if the build machine hits GitHub's rate
@@ -26,15 +28,21 @@ image are left out, because social previews need a full URL.
 
 ## The demo
 
-`components/DesktopDemo.tsx` recreates Kumo on a pretend desktop. `lib/kumo.ts` is a port of the parts of the app that
+`components/DesktopDemo.tsx` recreates Kumo on a pretend desktop at `/demo/`; the home page links to it on screens
+wider than a phone, and on a phone `/demo/` asks to be opened on a computer instead. `components/DemoBoot.tsx` plays a short power-on sequence before revealing the desktop. `lib/kumo.ts` is a port of the parts of the app that
 decide what happens: which actions the radial menu offers for a selection (including Merge PDFs and Combine into PDF
 for two or more files, and the "no action in common" message), the menu layout, the progress and result messages, page
 range checks, and the names Kumo gives its output, numbered when a name is taken. Nothing is processed; the demo only
 adds the files Kumo would write, and those can be used again.
 
-It works with a mouse (drag, then tap Shift; Ctrl-click or draw a box to select several files), with the keyboard
-(Space to select, Enter or Ctrl+Alt+K to open, arrow keys, Escape) and on touch screens (tap a file). Crop, Extract and
-Protect open the same dialogs as the app; `components/CropEditor.tsx` is the crop editor.
+The pretend desktop behaves like a small Windows desktop: icons can be dragged anywhere (or into a folder),
+double-clicked to open in a viewer (pictures, PDF pages, text, folders), renamed with F2, deleted, and new folders,
+text documents and drawings can be made from the right-click menu. Drawings are made in a small paint window and become
+PNG files Kumo can work on. `components/DemoWindows.tsx` holds the windows and viewers.
+
+Kumo itself opens the same way as in the app: drag files and tap Shift, or press Ctrl+Alt+K on a selection, or use
+"Open with Kumo" in the right-click menu. Crop, Extract and Protect open the same dialogs as the app;
+`components/CropEditor.tsx` is the crop editor.
 
 When the app's operations change, update `lib/kumo.ts` to match.
 
@@ -54,3 +62,4 @@ from `src/Kumo.App/Mascot/Images`.
 | `../demo/clouds*.webp` | `assets/github/banner.png`, the clouds only |
 | `../demo/logo.webp` | `src/Kumo.App/Mascot/Images/idle.png` |
 | `og.jpg` | `assets/github/banner.png`, fitted to 1200 × 630 |
+| `tux.svg` | Tux by Larry Ewing, Simon Budig and Garrett LeSage, from [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Tux.svg); free to use with credit |

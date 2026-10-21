@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import PrivacyBanner from "@/components/PrivacyBanner";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { site } from "@/lib/site";
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteHeader />
         <main id="main">{children}</main>
         <SiteFooter />
+        <PrivacyBanner />
       </body>
     </html>
   );

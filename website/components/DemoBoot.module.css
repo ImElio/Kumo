@@ -1,0 +1,307 @@
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.startup,
+.desktop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.startup {
+  z-index: 1;
+  opacity: 1;
+  transition: opacity 450ms ease;
+}
+
+.startupOff {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bootGroup {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  transform-origin: 50% 45%;
+  animation: zoomIn 850ms cubic-bezier(0.18, 0.72, 0.25, 1) both;
+}
+
+.bootMonitor {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: min(100%, 1500px);
+  min-height: 0;
+  padding: 14px 14px 26px;
+  border-radius: 22px 20px 24px 19px / 20px 24px 19px 22px;
+  background: linear-gradient(180deg, #34302d, #24201e);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.bootMonitor::after {
+  position: absolute;
+  bottom: 9px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: #4a433e;
+  content: "";
+  animation: led 300ms ease-out 350ms forwards;
+}
+
+.bootScreen {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #000;
+}
+
+/* The power-on flash: a bright line that opens into the picture. */
+.bootScreen::after {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  margin-top: -1px;
+  background: #fff6ec;
+  box-shadow: 0 0 24px 6px rgba(255, 220, 190, 0.7);
+  content: "";
+  opacity: 0;
+  transform: scaleX(0);
+  animation: flash 520ms ease-out 380ms forwards;
+  pointer-events: none;
+}
+
+.bootWall {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: linear-gradient(180deg, var(--wall-top), var(--wall-bottom));
+  opacity: 0;
+  animation: fadeIn 500ms ease-out 560ms forwards;
+}
+
+.bootContent {
+  position: absolute;
+  inset: 0 0 41px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 6%;
+  color: #fff;
+  text-shadow: 0 1px 10px rgba(80, 30, 10, 0.35);
+  opacity: 0;
+  animation: rise 500ms cubic-bezier(0.2, 0.75, 0.25, 1) 720ms forwards;
+}
+
+.bootMascot {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 14px rgba(80, 30, 10, 0.3));
+  animation: bob 1.6s ease-in-out infinite;
+}
+
+.bootTitle {
+  margin: 0.9rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.bootMessage {
+  min-height: 1.4em;
+  margin: 0.25rem 0 1.1rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  animation: rise 300ms ease-out;
+}
+
+.progress {
+  width: min(70%, 15rem);
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  animation: load 1250ms cubic-bezier(0.3, 0.6, 0.3, 1) 800ms forwards;
+}
+
+.bootTaskbar {
+  flex: none;
+  height: 41px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: color-mix(in srgb, #f3eee9 82%, transparent);
+  opacity: 0;
+  animation: fadeIn 400ms ease-out 1700ms forwards;
+}
+
+.bootStand {
+  width: 120px;
+  height: 46px;
+  flex: none;
+  background: linear-gradient(180deg, #2a2623, #3a3531);
+  clip-path: polygon(30% 0, 70% 0, 78% 78%, 100% 84%, 100% 100%, 0 100%, 0 84%, 22% 78%);
+}
+
+.bootCaption {
+  display: grid;
+  flex: none;
+  place-items: center;
+  height: 54px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  opacity: 0;
+  animation: fadeIn 400ms ease-out 900ms forwards;
+}
+
+.desktop {
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.98);
+  transition: opacity 600ms ease, transform 700ms cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.desktopOn {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+}
+
+@keyframes led {
+  to {
+    background: #f08b3e;
+    box-shadow: 0 0 6px #f08b3e;
+  }
+}
+
+@keyframes flash {
+  0% {
+    opacity: 1;
+    transform: scaleX(0);
+  }
+  45% {
+    opacity: 1;
+    transform: scaleX(1) scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1) scaleY(120);
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-6px) rotate(-2deg);
+  }
+}
+
+@keyframes load {
+  to {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .bootMonitor {
+    padding: 10px 10px 22px;
+    border-radius: 16px;
+  }
+
+  .bootStand {
+    height: 32px;
+  }
+
+  .bootCaption {
+    height: 50px;
+  }
+}
+
+@media (max-height: 680px) {
+  .bootMonitor {
+    padding: 8px 8px 18px;
+    border-radius: 14px;
+  }
+
+  .bootStand {
+    height: 28px;
+  }
+
+  .bootCaption {
+    height: 38px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bootGroup,
+  .bootMonitor::after,
+  .bootScreen::after,
+  .bootWall,
+  .bootContent,
+  .bootMascot,
+  .bootMessage,
+  .bootTaskbar,
+  .bootCaption,
+  .progress span {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+
+  .startup,
+  .desktop {
+    transition-duration: 1ms;
+  }
+}

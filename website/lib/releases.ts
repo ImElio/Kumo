@@ -4,7 +4,6 @@ export type Release = {
   tag: string;
   version: string;
   name: string;
-  url: string;
   publishedAt: string | null;
   prerelease: boolean;
   /** Release notes as HTML rendered and sanitized by GitHub. */
@@ -14,7 +13,6 @@ export type Release = {
 type GitHubRelease = {
   tag_name: string;
   name: string | null;
-  html_url: string;
   published_at: string | null;
   draft: boolean;
   prerelease: boolean;
@@ -55,7 +53,6 @@ export async function getWindowsReleases(): Promise<Release[] | null> {
       tag: r.tag_name,
       version: r.tag_name.slice(PREFIX.length),
       name: r.name || `Kumo ${r.tag_name.slice(PREFIX.length)}`,
-      url: r.html_url,
       publishedAt: r.published_at,
       prerelease: r.prerelease,
       html: r.body_html ?? "",

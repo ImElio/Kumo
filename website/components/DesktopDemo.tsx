@@ -1,16 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import {
   categoryItems,
   checkPages,
   entriesFor,
   execute,
+  folder,
   initialDesktop,
   MINIMUM_PASSWORD_LENGTH,
+  newId,
   progressText,
   rootItems,
   selectionText,
+  stem,
   unavailableText,
   type Category,
   type DemoFile,
@@ -19,6 +22,7 @@ import {
   type RadialItem,
 } from "@/lib/kumo";
 import CropEditor from "./CropEditor";
+import { FolderView, ImageViewer, PaintApp, PdfViewer, TextEditor, Thumb, Window, type WindowState } from "./DemoWindows";
 import styles from "./DesktopDemo.module.css";
 
 const OUTER = 118;
@@ -29,9 +33,13 @@ const TAP_MS = 450;
 const CATEGORY_DWELL = 350;
 const BACK_DWELL = 500;
 const STEP_MS = 420;
+const CELL_W = 92;
+const CELL_H = 92;
+const PAD_X = 10;
+const PAD_Y = 12;
 
-type Drag = { files: DemoFile[]; startX: number; startY: number; x: number; y: number; moved: boolean };
-type Marquee = { startX: number; startY: number; x: number; y: number; additive: boolean; base: string[] };
+type Drag = { ids: string[]; startX: number; startY: number; x: number; y: number; moved: boolean };
+type Marquee = { startX: number; startY: number; x: number; y: number; base: string[] };
 type Phase = "menu" | "unavailable" | "dialog" | "running" | "result";
 type Dialog = { entry: MenuEntry; requirement: "crop" | "pages" | "password" };
 type Menu = {
@@ -47,6 +55,29 @@ type Menu = {
   mascot: string;
   dialog?: Dialog;
 };
+type ContextTarget = { type: "desktop" } | { type: "file"; id: string } | { type: "child"; folderId: string; child: DemoFile };
+type ContextMenu = { x: number; y: number; target: ContextTarget };
+type Tip = "kumo" | "action" | "open" | "draw";
+
+const TIPS: { id: Tip; text: ReactNode }[] = [
+  {
+    id: "kumo",
+    text: (
+      <>
+        <span className={styles.pointerOnly}>
+          Drag <b>strawberry.jpg</b> and tap <kbd>Shift</kbd>
+        </span>
+        <span className={styles.touchOnly}>
+          Tap <b>strawberry.jpg</b>
+        </span>
+      </>
+    ),
+  },
+  { id: "action", text: "Pick an action, like Rotate" },
+  { id: "open", text: "Double-click a file to open it" },
+  { id: "draw", text: "Right-click the desktop for a new drawing" },
+];
+const TIPS_KEY = "kumo-demo-tips";
 
 function hitTest(dx: number, dy: number, count: number): number | "hub" | null {
   const distance = Math.hypot(dx, dy);
@@ -80,7 +111,34 @@ function labelPosition(index: number, count: number) {
 const intersects = (a: DOMRect, b: { left: number; top: number; right: number; bottom: number }) =>
   a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 
-export default function DesktopDemo() {
+/** Places icons without a position in the first free cells, column by column, like the Windows desktop. */
+function arrange(files: DemoFile[], height: number): DemoFile[] {
+  const rows = Math.max(1, Math.floor((height - PAD_Y) / CELL_H));
+  const cell = (f: DemoFile) => `${Math.round((f.x! - PAD_X) / CELL_W)},${Math.round((f.y! - PAD_Y) / CELL_H)}`;
+  const taken = new Set(files.filter((f) => f.x !== undefined).map(cell));
+  let next = 0;
+  return files.map((f) => {
+    if (f.x !== undefined) return f;
+    while (taken.has(`${Math.floor(next / rows)},${next % rows}`)) next++;
+    const placed = { ...f, x: PAD_X + Math.floor(next / rows) * CELL_W, y: PAD_Y + (next % rows) * CELL_H };
+    taken.add(`${Math.floor(next / rows)},${next % rows}`);
+    return placed;
+  });
+}
+
+/** Windows numbers a new item when its name is taken: "New folder", "New folder (2)". */
+function uniqueName(base: string, extension: string, existing: DemoFile[]) {
+  const names = new Set(existing.map((f) => f.name.toLowerCase()));
+  for (let n = 1; ; n++) {
+    const name = `${base}${n === 1 ? "" : ` (${n})`}${extension}`;
+    if (!names.has(name.toLowerCase())) return name;
+  }
+}
+
+const extensionOf = (f: DemoFile) => (f.kind === "folder" ? "" : f.name.slice(stem(f.name).length));
+
+/** `entered` turns true when the desktop becomes visible; the icons, tips and welcome notification arrive then. */
+export default function DesktopDemo({ immersive = false, entered = true }: { immersive?: boolean; entered?: boolean }) {
   const desktopRef = useRef<HTMLDivElement>(null);
   const iconRefs = useRef(new Map<string, HTMLElement>());
   const segmentRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -91,10 +149,18 @@ export default function DesktopDemo() {
   const [drag, setDrag] = useState<Drag | null>(null);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const [menu, setMenu] = useState<Menu | null>(null);
+  const [context, setContext] = useState<ContextMenu | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [windows, setWindows] = useState<WindowState[]>([]);
   const [hint, setHint] = useState("");
+  const [arriving, setArriving] = useState(true);
+  const [welcome, setWelcome] = useState(false);
+  const [showTips, setShowTips] = useState(true);
+  const [tried, setTried] = useState<Tip[]>([]);
   const shiftDownAt = useRef<number | null>(null);
   const dwell = useRef<number | null>(null);
   const timers = useRef<number[]>([]);
+  const zTop = useRef(10);
 
   const items: RadialItem[] = !menu || menu.phase !== "menu" ? [] : menu.category ? categoryItems(menu.entries, menu.category) : rootItems(menu.entries);
 
@@ -103,6 +169,38 @@ export default function DesktopDemo() {
   }, []);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(TIPS_KEY) === "hidden") setShowTips(false);
+    } catch {
+      // Storage can be unavailable (private windows, blocked site data); the tips then stay visible.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!entered) return;
+    const done = window.setTimeout(() => setArriving(false), 1400);
+    const show = window.setTimeout(() => setWelcome(true), 900);
+    const hide = window.setTimeout(() => setWelcome(false), 9000);
+    return () => [done, show, hide].forEach(clearTimeout);
+  }, [entered]);
+
+  const mark = (tip: Tip) => setTried((t) => (t.includes(tip) ? t : [...t, tip]));
+
+  const toggleTips = (visible: boolean) => {
+    setShowTips(visible);
+    try {
+      if (visible) localStorage.removeItem(TIPS_KEY);
+      else localStorage.setItem(TIPS_KEY, "hidden");
+    } catch {
+      // Not remembered for the next visit.
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (desktop.some((f) => f.x === undefined) && desktopRef.current) setDesktop((d) => arrange(d, desktopRef.current!.clientHeight));
+  }, [desktop]);
 
   const cancelDwell = () => {
     if (dwell.current) clearTimeout(dwell.current);
@@ -114,13 +212,12 @@ export default function DesktopDemo() {
     return { x: clientX - rect.left, y: clientY - rect.top };
   };
 
+  const bounds = () => ({ w: desktopRef.current!.clientWidth, h: desktopRef.current!.clientHeight });
+
   const clampCenter = (x: number, y: number) => {
-    const rect = desktopRef.current!.getBoundingClientRect();
+    const { w, h } = bounds();
     const half = SIZE / 2;
-    return {
-      x: Math.min(Math.max(x, half), Math.max(half, rect.width - half)),
-      y: Math.min(Math.max(y, half), Math.max(half, rect.height - half - 44)),
-    };
+    return { x: Math.min(Math.max(x, half), Math.max(half, w - half)), y: Math.min(Math.max(y, half), Math.max(half, h - half - 44)) };
   };
 
   const closeMenu = useCallback(() => {
@@ -136,21 +233,14 @@ export default function DesktopDemo() {
     const files = dropped.filter((f) => f.kind !== "folder");
     const entries = entriesFor(files);
     setHint("");
+    setContext(null);
     if (entries.length === 0) {
-      setMenu({
-        files,
-        entries,
-        ...center,
-        category: null,
-        interactive: true,
-        hover: null,
-        phase: "unavailable",
-        status: unavailableText(files, dropped.length > files.length),
-        mascot: "cancelled",
-      });
+      setMenu({ files, entries, ...center, category: null, interactive: true, hover: null, phase: "unavailable", status: unavailableText(files, dropped.length > files.length), mascot: "cancelled" });
       return;
     }
     setMenu({ files, entries, ...center, category: null, interactive, hover: null, phase: "menu", status: selectionText(files), mascot: interactive ? "idle" : "dragging" });
+    setWelcome(false);
+    mark("kumo");
   };
 
   const enterCategory = (category: Category) => {
@@ -174,6 +264,7 @@ export default function DesktopDemo() {
       const current = desktopNow.current;
       const result = execute(entry, files, options, current.map((f) => f.name));
       const tone = result.tone;
+      if (tone === "success") mark("action");
       setDesktop([...current.map((f) => ({ ...f, fresh: false })), ...result.outputs]);
       setMenu((m) => m && {
         ...m,
@@ -217,22 +308,132 @@ export default function DesktopDemo() {
     else if (target === "hub" && menu.category) dwell.current = window.setTimeout(goBack, BACK_DWELL);
   };
 
-  const filesByName = (names: string[]) => desktop.filter((f) => names.includes(f.name));
+  const filesById = (ids: string[]) => desktop.filter((f) => ids.includes(f.id));
+
+  // ---- Windows ----
+
+  const focusWindow = (wid: string) => setWindows((ws) => ws.map((w) => (w.wid === wid ? { ...w, z: ++zTop.current } : w)));
+
+  const openWindow = (file: DemoFile, fileId?: string, app: WindowState["app"] = "file") => {
+    if (app === "file") mark("open");
+    const existing = windows.find((w) => (fileId ? w.fileId === fileId : w.file.id === file.id) && w.app === app);
+    if (existing) {
+      focusWindow(existing.wid);
+      return;
+    }
+    const { w: dw, h: dh } = bounds();
+    let w = 420;
+    let h = 320;
+    if (app === "paint") [w, h] = [600, 470];
+    else if (file.kind === "pdf") [w, h] = [400, 460];
+    else if (file.kind === "folder") [w, h] = [440, 300];
+    else if (file.image) {
+      const scale = Math.min(560 / file.image.width, 380 / file.image.height, 1.2);
+      [w, h] = [Math.max(260, file.image.width * scale + 24), Math.max(180, file.image.height * scale + 58)];
+    }
+    w = Math.min(w, dw - 16);
+    h = Math.min(h, dh - 16);
+    const offset = (windows.length % 6) * 26;
+    const x = Math.max(8, Math.min(dw - w - 8, (dw - w) / 2 + offset - 60));
+    const y = Math.max(8, Math.min(dh - h - 8, (dh - h) / 2 + offset - 40));
+    setWindows((ws) => [...ws, { wid: newId(), fileId, file, app, x, y, w, h, z: ++zTop.current }]);
+  };
+
+  const closeWindow = (wid: string) => setWindows((ws) => ws.filter((w) => w.wid !== wid));
+
+  const moveWindow = (wid: string, x: number, y: number) => {
+    const { w: dw, h: dh } = bounds();
+    setWindows((ws) => ws.map((w) => (w.wid === wid ? { ...w, x: Math.min(Math.max(x, -w.w + 80), dw - 80), y: Math.min(Math.max(y, 0), dh - 34) } : w)));
+  };
+
+  const openFile = (file: DemoFile) => openWindow(file, file.id);
+
+  const windowFile = (w: WindowState) => (w.fileId ? desktop.find((f) => f.id === w.fileId) : undefined) ?? w.file;
+
+  const updateFile = (id: string, change: Partial<DemoFile>) => setDesktop((d) => d.map((f) => (f.id === id ? { ...f, ...change } : f)));
+
+  // ---- Creating, renaming, deleting and moving ----
+
+  const createAt = (x: number, y: number, file: DemoFile) => {
+    const { w, h } = bounds();
+    const placed = { ...file, x: Math.min(Math.max(x - CELL_W / 2, 0), w - CELL_W), y: Math.min(Math.max(y - 30, 0), h - CELL_H), fresh: true };
+    setDesktop((d) => [...d.map((f) => ({ ...f, fresh: false })), placed]);
+    setSelected([placed.id]);
+    return placed;
+  };
+
+  const newFolder = (x: number, y: number) => {
+    const made = createAt(x, y, folder(uniqueName("New folder", "", desktop)));
+    setRenaming(made.id);
+  };
+
+  const newText = (x: number, y: number) => {
+    const made = createAt(x, y, { id: newId(), name: uniqueName("New Text Document", ".txt", desktop), kind: "txt", text: "" });
+    setRenaming(made.id);
+  };
+
+  const newDrawing = (x: number, y: number) => {
+    const placeholder: DemoFile = { id: newId(), name: "Drawing.png", kind: "png", x, y };
+    openWindow(placeholder, undefined, "paint");
+  };
+
+  const saveDrawing = (win: WindowState, dataUrl: string, width: number, height: number) => {
+    const image = { thumb: dataUrl, full: dataUrl, width, height };
+    mark("draw");
+    if (win.fileId && desktopNow.current.some((f) => f.id === win.fileId)) {
+      updateFile(win.fileId, { image, view: undefined });
+      return;
+    }
+    const made = createAt(win.file.x ?? 120, win.file.y ?? 120, { id: newId(), name: uniqueName("Drawing", ".png", desktopNow.current), kind: "png", image });
+    setWindows((ws) => ws.map((w) => (w.wid === win.wid ? { ...w, fileId: made.id, file: made } : w)));
+  };
+
+  const remove = (ids: string[]) => {
+    setDesktop((d) => d.filter((f) => !ids.includes(f.id)));
+    setWindows((ws) => ws.filter((w) => !w.fileId || !ids.includes(w.fileId)));
+    setSelected((s) => s.filter((id) => !ids.includes(id)));
+  };
+
+  const commitRename = (id: string, value: string) => {
+    setRenaming(null);
+    const file = desktop.find((f) => f.id === id);
+    const base = value.trim().replace(/[\\/:*?"<>|]/g, "");
+    if (!file || !base) return;
+    const ext = extensionOf(file);
+    if (`${base}${ext}` === file.name) return;
+    updateFile(id, { name: uniqueName(base, ext, desktop.filter((f) => f.id !== id)) });
+  };
+
+  const moveIntoFolder = (folderId: string, ids: string[]) => {
+    setDesktop((d) => {
+      const moving = d.filter((f) => ids.includes(f.id)).map(({ x: _x, y: _y, fresh: _f, ...rest }) => rest as DemoFile);
+      return d.filter((f) => !ids.includes(f.id)).map((f) => (f.id === folderId ? { ...f, children: [...(f.children ?? []), ...moving] } : f));
+    });
+    setWindows((ws) => ws.filter((w) => !w.fileId || !ids.includes(w.fileId)));
+    setSelected([folderId]);
+  };
+
+  const moveToDesktop = (folderId: string, child: DemoFile) => {
+    setDesktop((d) => [...d.map((f) => (f.id === folderId ? { ...f, children: (f.children ?? []).filter((c) => c.id !== child.id) } : f)), { ...child, x: undefined, y: undefined, fresh: true }]);
+  };
+
+  // ---- Dragging icons: moves them, or opens Kumo when Shift is tapped on the way ----
 
   // Pointer capture keeps the drag going over the menu and outside the desktop.
   const onIconPointerDown = (event: ReactPointerEvent, entry: DemoFile) => {
-    if (event.button !== 0 || menu?.phase === "running" || menu?.phase === "dialog") return;
+    if (event.button !== 0 || menu?.phase === "running" || menu?.phase === "dialog" || renaming === entry.id) return;
     if (menu) closeMenu();
+    setContext(null);
     event.stopPropagation();
     const additive = event.ctrlKey || event.metaKey;
     let selection = selected;
-    if (additive) selection = selected.includes(entry.name) ? selected.filter((n) => n !== entry.name) : [...selected, entry.name];
-    else if (!selected.includes(entry.name)) selection = [entry.name];
+    if (additive) selection = selected.includes(entry.id) ? selected.filter((n) => n !== entry.id) : [...selected, entry.id];
+    else if (!selected.includes(entry.id)) selection = [entry.id];
     setSelected(selection);
-    if (event.pointerType !== "mouse" || additive || !selection.includes(entry.name)) return;
+    if (event.pointerType !== "mouse" || additive || !selection.includes(entry.id)) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     const p = local(event.clientX, event.clientY);
-    setDrag({ files: filesByName(selection), startX: p.x, startY: p.y, x: p.x, y: p.y, moved: false });
+    setDrag({ ids: selection, startX: p.x, startY: p.y, x: p.x, y: p.y, moved: false });
   };
 
   const onIconPointerMove = (event: ReactPointerEvent) => {
@@ -241,8 +442,15 @@ export default function DesktopDemo() {
     const moved = drag.moved || Math.hypot(p.x - drag.startX, p.y - drag.startY) > DRAG_THRESHOLD;
     setDrag({ ...drag, x: p.x, y: p.y, moved });
     if (menu && !menu.interactive && menu.phase === "menu") updateHover(hitTest(p.x - menu.x, p.y - menu.y, items.length));
-    if (moved && !drag.moved && !menu) setHint("Now tap Shift");
+    if (moved && !drag.moved && !menu) setHint("Drop to move it, or tap Shift for Kumo");
   };
+
+  const folderUnder = (clientX: number, clientY: number, exclude: string[]) =>
+    desktop.find((f) => {
+      if (f.kind !== "folder" || exclude.includes(f.id)) return false;
+      const r = iconRefs.current.get(f.id)?.getBoundingClientRect();
+      return !!r && clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+    });
 
   const onIconPointerUp = (event: ReactPointerEvent, entry: DemoFile) => {
     const current = drag;
@@ -251,28 +459,36 @@ export default function DesktopDemo() {
     if (event.pointerType !== "mouse") {
       const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
       const p = local(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      openMenu(filesByName(selected.includes(entry.name) ? selected : [entry.name]), p.x, p.y, true);
+      openMenu(filesById(selected.includes(entry.id) ? selected : [entry.id]), p.x, p.y, true);
       return;
     }
     if (!current?.moved) {
-      if (!(event.ctrlKey || event.metaKey)) setSelected([entry.name]);
+      if (!(event.ctrlKey || event.metaKey)) setSelected([entry.id]);
       setHint("");
       return;
     }
-    if (!menu || menu.interactive) {
-      setHint(menu ? "" : "Tap Shift while you drag to open Kumo");
+    setHint("");
+    if (menu && !menu.interactive) {
+      const p = local(event.clientX, event.clientY);
+      const target = menu.phase === "menu" ? hitTest(p.x - menu.x, p.y - menu.y, items.length) : null;
+      cancelDwell();
+      if (menu.phase !== "menu") setMenu((m) => m && { ...m, interactive: true });
+      else if (target === null) closeMenu();
+      else if (target === "hub") setMenu((m) => m && { ...m, interactive: true, mascot: "idle", hover: null });
+      else activate(target, true);
       return;
     }
-    const p = local(event.clientX, event.clientY);
-    const target = menu.phase === "menu" ? hitTest(p.x - menu.x, p.y - menu.y, items.length) : null;
-    cancelDwell();
-    if (menu.phase !== "menu") {
-      setMenu((m) => m && { ...m, interactive: true });
+    const into = folderUnder(event.clientX, event.clientY, current.ids);
+    if (into) {
+      moveIntoFolder(into.id, current.ids);
       return;
     }
-    if (target === null) closeMenu();
-    else if (target === "hub") setMenu((m) => m && { ...m, interactive: true, mascot: "idle", hover: null });
-    else activate(target, true);
+    const { w, h } = bounds();
+    const dx = current.x - current.startX;
+    const dy = current.y - current.startY;
+    setDesktop((d) =>
+      d.map((f) => (current.ids.includes(f.id) ? { ...f, x: Math.min(Math.max((f.x ?? 0) + dx, 0), w - CELL_W), y: Math.min(Math.max((f.y ?? 0) + dy, 0), h - CELL_H) } : f)),
+    );
   };
 
   // Shift is a tap (pressed and released quickly) during a drag, like in Kumo; holding it keeps Explorer's move.
@@ -290,7 +506,7 @@ export default function DesktopDemo() {
       if (e.key !== "Shift" || shiftDownAt.current === null) return;
       const quick = performance.now() - shiftDownAt.current <= TAP_MS;
       shiftDownAt.current = null;
-      if (quick && !menu) openMenu(drag.files, drag.x, drag.y, false);
+      if (quick && !menu) openMenu(filesById(drag.ids), drag.x, drag.y, false);
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -302,6 +518,7 @@ export default function DesktopDemo() {
 
   // Rubber-band selection on empty desktop space, as in File Explorer.
   const onDesktopPointerDown = (event: ReactPointerEvent) => {
+    setContext(null);
     if (event.target !== event.currentTarget && !(event.target as HTMLElement).dataset.surface) return;
     if (menu) {
       if (menu.phase === "running" || menu.phase === "dialog") return;
@@ -312,7 +529,19 @@ export default function DesktopDemo() {
     if (event.pointerType !== "mouse" || event.button !== 0) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     const p = local(event.clientX, event.clientY);
-    setMarquee({ startX: p.x, startY: p.y, x: p.x, y: p.y, additive, base: additive ? selected : [] });
+    setMarquee({ startX: p.x, startY: p.y, x: p.x, y: p.y, base: additive ? selected : [] });
+  };
+
+  const selectInside = (next: Marquee) => {
+    const origin = desktopRef.current!.getBoundingClientRect();
+    const box = {
+      left: origin.left + Math.min(next.startX, next.x),
+      right: origin.left + Math.max(next.startX, next.x),
+      top: origin.top + Math.min(next.startY, next.y),
+      bottom: origin.top + Math.max(next.startY, next.y),
+    };
+    const inside = [...iconRefs.current.entries()].filter(([, el]) => intersects(el.getBoundingClientRect(), box)).map(([id]) => id);
+    setSelected([...new Set([...next.base, ...inside])]);
   };
 
   const onDesktopPointerMove = (event: ReactPointerEvent) => {
@@ -330,32 +559,48 @@ export default function DesktopDemo() {
     setMarquee(null);
   };
 
-  const selectInside = (next: Marquee) => {
-    const origin = desktopRef.current!.getBoundingClientRect();
-    const box = {
-      left: origin.left + Math.min(next.startX, next.x),
-      right: origin.left + Math.max(next.startX, next.x),
-      top: origin.top + Math.min(next.startY, next.y),
-      bottom: origin.top + Math.max(next.startY, next.y),
-    };
-    const inside = [...iconRefs.current.entries()].filter(([, el]) => intersects(el.getBoundingClientRect(), box)).map(([name]) => name);
-    setSelected([...new Set([...next.base, ...inside])]);
+  const showContext = (event: React.MouseEvent, target: ContextTarget) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (menu && (menu.phase === "running" || menu.phase === "dialog")) return;
+    closeMenu();
+    const p = local(event.clientX, event.clientY);
+    const { w, h } = bounds();
+    if (target.type === "file" && !selected.includes(target.id)) setSelected([target.id]);
+    setContext({ x: Math.min(p.x, w - 200), y: Math.min(p.y, h - 220), target });
+  };
+
+  const openKumoFor = (ids: string[]) => {
+    const anchor = iconRefs.current.get(ids[0])?.getBoundingClientRect();
+    if (!anchor) return;
+    const p = local(anchor.left + anchor.width / 2, anchor.top + anchor.height / 2);
+    openMenu(filesById(ids), p.x + SIZE / 2, p.y, true);
   };
 
   const onIconKeyDown = (event: ReactKeyboardEvent, entry: DemoFile) => {
-    const shortcut = event.ctrlKey && event.altKey && event.key.toLowerCase() === "k";
-    if (event.key === " ") {
+    if (renaming) return;
+    const ids = selected.includes(entry.id) ? selected : [entry.id];
+    if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "k") {
       event.preventDefault();
-      setSelected((s) => (s.includes(entry.name) ? s.filter((n) => n !== entry.name) : [...s, entry.name]));
-      return;
-    }
-    if (event.key === "Enter" || shortcut) {
+      setSelected(ids);
+      openKumoFor(ids);
+    } else if (event.key === " ") {
       event.preventDefault();
-      const names = selected.includes(entry.name) ? selected : [entry.name];
-      setSelected(names);
-      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      const p = local(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      openMenu(filesByName(names), p.x + SIZE / 2, p.y, true);
+      setSelected((s) => (s.includes(entry.id) ? s.filter((n) => n !== entry.id) : [...s, entry.id]));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      openFile(entry);
+    } else if (event.key === "F2") {
+      event.preventDefault();
+      setRenaming(entry.id);
+    } else if (event.key === "Delete") {
+      event.preventDefault();
+      remove(ids);
+    } else if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+      event.preventDefault();
+      const r = event.currentTarget.getBoundingClientRect();
+      const p = local(r.right, r.top + 20);
+      setContext({ x: p.x, y: p.y, target: { type: "file", id: entry.id } });
     }
   };
 
@@ -382,16 +627,45 @@ export default function DesktopDemo() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
     closeMenu();
+    setContext(null);
+    setRenaming(null);
+    setWindows([]);
     setDesktop(initialDesktop());
     setSelected([]);
     setHint("");
   };
 
-  const dragging = drag?.moved ? drag : null;
-  const changed = desktop.length !== initialDesktop().length;
+  const dragOffset = drag?.moved && !menu ? { x: drag.x - drag.startX, y: drag.y - drag.startY } : null;
+  const activeWindow = windows.reduce<WindowState | null>((top, w) => (!top || w.z > top.z ? w : top), null);
+  const contextFile = context?.target.type === "file" ? desktop.find((f) => f.id === (context.target as { id: string }).id) : undefined;
+
+  const contextItems: { label: string; action: () => void; separator?: boolean }[] = !context
+    ? []
+    : context.target.type === "desktop"
+      ? [
+          { label: "New folder", action: () => newFolder(context.x, context.y) },
+          { label: "New text document", action: () => newText(context.x, context.y) },
+          { label: "New drawing", action: () => newDrawing(context.x, context.y) },
+          { label: "Arrange icons", action: () => setDesktop((d) => arrange(d.map((f) => ({ ...f, x: undefined, y: undefined })), bounds().h)), separator: true },
+          { label: "Reset desktop", action: reset },
+        ]
+      : context.target.type === "child"
+        ? [
+            { label: "Open", action: () => openWindow((context.target as { child: DemoFile }).child) },
+            { label: "Move to desktop", action: () => moveToDesktop((context.target as { folderId: string }).folderId, (context.target as { child: DemoFile }).child) },
+          ]
+        : contextFile
+          ? [
+              { label: "Open", action: () => openFile(contextFile) },
+              ...(contextFile.kind === "folder" ? [] : [{ label: "Open with Kumo", action: () => openKumoFor(selected.includes(contextFile.id) ? selected : [contextFile.id]) }]),
+              ...(contextFile.kind === "png" && contextFile.image?.full.startsWith("data:") ? [{ label: "Edit drawing", action: () => openWindow(contextFile, contextFile.id, "paint") }] : []),
+              { label: "Rename", action: () => setRenaming(contextFile.id), separator: true },
+              { label: "Delete", action: () => remove(selected.includes(contextFile.id) ? selected : [contextFile.id]) },
+            ]
+          : [];
 
   return (
-    <div className={styles.demo}>
+    <div className={`${styles.demo} ${immersive ? styles.immersiveDemo : ""}`}>
       <div className={styles.monitor}>
         <div className={styles.screen}>
           <div
@@ -401,32 +675,100 @@ export default function DesktopDemo() {
             onPointerMove={onDesktopPointerMove}
             onPointerUp={onDesktopPointerUp}
             onPointerCancel={() => setMarquee(null)}
+            onContextMenu={(e) => showContext(e, { type: "desktop" })}
           >
             <Wallpaper />
-            <ul className={styles.icons} aria-label="Demo desktop. Select files with Space, then press Enter to open Kumo." data-surface="true">
-              {desktop.map((entry) => (
-                <li key={entry.name}>
-                  <button
-                    ref={(el) => {
-                      if (el) iconRefs.current.set(entry.name, el);
-                      else iconRefs.current.delete(entry.name);
+            <ul className={styles.icons} aria-label="Demo desktop. Enter opens a file, Ctrl+Alt+K opens Kumo, Space selects, F2 renames." data-surface="true">
+              {desktop.map((entry, index) => {
+                const lifted = dragOffset && drag?.ids.includes(entry.id);
+                return (
+                  <li
+                    key={entry.id}
+                    className={`${styles.iconSlot} ${arriving ? (entered ? styles.iconArrive : styles.iconWaiting) : ""}`}
+                    style={{
+                      animationDelay: arriving ? `${index * 70}ms` : undefined,
+                      left: entry.x ?? 0,
+                      top: entry.y ?? 0,
+                      visibility: entry.x === undefined ? "hidden" : undefined,
+                      transform: lifted ? `translate(${dragOffset.x}px, ${dragOffset.y}px)` : undefined,
+                      zIndex: lifted ? 3 : undefined,
                     }}
-                    type="button"
-                    className={`${styles.icon} ${selected.includes(entry.name) ? styles.selected : ""} ${dragging?.files.some((f) => f.name === entry.name) ? styles.lifted : ""} ${entry.fresh ? styles.fresh : ""}`}
-                    aria-pressed={selected.includes(entry.name)}
-                    aria-label={entry.name}
-                    onPointerDown={(e) => onIconPointerDown(e, entry)}
-                    onPointerMove={onIconPointerMove}
-                    onPointerUp={(e) => onIconPointerUp(e, entry)}
-                    onPointerCancel={() => setDrag(null)}
-                    onKeyDown={(e) => onIconKeyDown(e, entry)}
                   >
-                    <Thumb file={entry} />
-                    <span className={styles.name}>{entry.name}</span>
-                  </button>
-                </li>
-              ))}
+                    <button
+                      ref={(el) => {
+                        if (el) iconRefs.current.set(entry.id, el);
+                        else iconRefs.current.delete(entry.id);
+                      }}
+                      type="button"
+                      className={`${styles.icon} ${selected.includes(entry.id) ? styles.selected : ""} ${lifted ? styles.lifted : ""} ${entry.fresh ? styles.fresh : ""}`}
+                      aria-pressed={selected.includes(entry.id)}
+                      aria-label={entry.name}
+                      onPointerDown={(e) => onIconPointerDown(e, entry)}
+                      onPointerMove={onIconPointerMove}
+                      onPointerUp={(e) => onIconPointerUp(e, entry)}
+                      onPointerCancel={() => setDrag(null)}
+                      onDoubleClick={() => openFile(entry)}
+                      onKeyDown={(e) => onIconKeyDown(e, entry)}
+                      onContextMenu={(e) => showContext(e, { type: "file", id: entry.id })}
+                    >
+                      <Thumb file={entry} />
+                      {renaming === entry.id ? (
+                        <input
+                          className={styles.renameInput}
+                          autoFocus
+                          defaultValue={entry.kind === "folder" ? entry.name : stem(entry.name)}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === "Enter") commitRename(entry.id, e.currentTarget.value);
+                            if (e.key === "Escape") setRenaming(null);
+                          }}
+                          onBlur={(e) => commitRename(entry.id, e.currentTarget.value)}
+                          aria-label={`New name for ${entry.name}`}
+                        />
+                      ) : (
+                        <span className={styles.name}>{entry.name}</span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
+
+            {windows.map((win) => {
+              const file = windowFile(win);
+              return (
+                <Window
+                  key={win.wid}
+                  win={win}
+                  title={win.app === "paint" ? `${file.name} — Paint` : file.name}
+                  active={activeWindow?.wid === win.wid}
+                  onFocus={() => focusWindow(win.wid)}
+                  onMove={(x, y) => moveWindow(win.wid, x, y)}
+                  onClose={() => closeWindow(win.wid)}
+                >
+                  {win.app === "paint" ? (
+                    <PaintApp onSave={(url, w, h) => saveDrawing(win, url, w, h)} />
+                  ) : file.kind === "pdf" ? (
+                    <PdfViewer file={file} width={win.w} />
+                  ) : file.kind === "txt" ? (
+                    <TextEditor file={file} onChange={(text) => win.fileId && updateFile(win.fileId, { text })} />
+                  ) : file.kind === "folder" ? (
+                    <FolderView
+                      file={file}
+                      onOpen={(child) => openWindow(child)}
+                      onMenu={(child, x, y) => {
+                        const p = local(x, y);
+                        setContext({ x: p.x, y: p.y, target: { type: "child", folderId: file.id, child } });
+                      }}
+                    />
+                  ) : (
+                    <ImageViewer file={file} width={win.w} height={win.h} />
+                  )}
+                </Window>
+              );
+            })}
 
             {marquee && (
               <div
@@ -441,10 +783,31 @@ export default function DesktopDemo() {
               />
             )}
 
-            {dragging && (
-              <div className={styles.ghost} style={{ left: dragging.x, top: dragging.y }} aria-hidden="true">
-                <Thumb file={dragging.files[0]} />
-                {dragging.files.length > 1 && <span className={styles.count}>{dragging.files.length}</span>}
+            {drag?.moved && menu && (
+              <div className={styles.ghost} style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+                <Thumb file={filesById(drag.ids)[0]} />
+                {drag.ids.length > 1 && <span className={styles.count}>{drag.ids.length}</span>}
+              </div>
+            )}
+
+            {context && contextItems.length > 0 && (
+              <div className={styles.contextMenu} style={{ left: context.x, top: context.y }} role="menu" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === "Escape" && setContext(null)}>
+                {contextItems.map((item, i) => (
+                  <div key={item.label}>
+                    {item.separator && i > 0 && <hr />}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      autoFocus={i === 0}
+                      onClick={() => {
+                        setContext(null);
+                        item.action();
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -513,21 +876,66 @@ export default function DesktopDemo() {
               </div>
             )}
 
+            {showTips && entered && (
+              <aside className={styles.tips} aria-label="Things to try" onPointerDown={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()}>
+                <button type="button" className={styles.tipsClose} onClick={() => toggleTips(false)} aria-label="Hide things to try">
+                  ×
+                </button>
+                <p className={styles.tipsTitle}>Things to try</p>
+                <ul>
+                  {TIPS.map((tip) => (
+                    <li key={tip.id} className={tried.includes(tip.id) ? styles.tipDone : undefined}>
+                      <span className={styles.tipBox} aria-hidden="true" />
+                      <span>
+                        {tip.text}
+                        {tried.includes(tip.id) && <span className={styles.srOnly}> (done)</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {tried.length === TIPS.length && (
+                  <p className={styles.tipsFinished}>
+                    That&apos;s Kumo. It works the same way on your own files. <a href="/download/">Get it for Windows</a>
+                  </p>
+                )}
+              </aside>
+            )}
+
+            {welcome && (
+              <div className={styles.toast} role="status">
+                <div className={styles.toastHead}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/mascot/idle.png" alt="" width={14} height={14} />
+                  <span>Kumo</span>
+                  <button type="button" onClick={() => setWelcome(false)} aria-label="Dismiss notification">
+                    ×
+                  </button>
+                </div>
+                <div className={styles.toastBody}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/mascot/success.png" alt="" width={44} height={44} />
+                  <div>
+                    <strong>Kumo is ready</strong>
+                    <p>
+                      <span className={styles.pointerOnly}>Drag files and tap Shift to open Kumo.</span>
+                      <span className={styles.touchOnly}>Tap a file to open Kumo.</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {menu?.phase === "dialog" && menu.dialog && (
               <div className={styles.scrim}>
-                {menu.dialog.requirement === "crop" && (
-                  <CropEditor file={menu.files[0]} onCancel={cancelDialog} onCrop={(crop) => run(menu.dialog!.entry, { crop })} />
-                )}
+                {menu.dialog.requirement === "crop" && <CropEditor file={menu.files[0]} onCancel={cancelDialog} onCrop={(crop) => run(menu.dialog!.entry, { crop })} />}
                 {menu.dialog.requirement === "pages" && (
                   <PagesDialog fileCount={menu.files.length} onCancel={cancelDialog} onConfirm={(pages) => run(menu.dialog!.entry, { pages })} />
                 )}
-                {menu.dialog.requirement === "password" && (
-                  <PasswordDialog onCancel={cancelDialog} onConfirm={(password) => run(menu.dialog!.entry, { password })} />
-                )}
+                {menu.dialog.requirement === "password" && <PasswordDialog onCancel={cancelDialog} onConfirm={(password) => run(menu.dialog!.entry, { password })} />}
               </div>
             )}
           </div>
-          <Taskbar />
+          <Taskbar windows={windows} active={activeWindow?.wid} titleOf={(w) => windowFile(w).name} onSelect={focusWindow} />
         </div>
       </div>
       <div className={styles.stand} aria-hidden="true" />
@@ -537,21 +945,28 @@ export default function DesktopDemo() {
           {hint || (
             <>
               <span className={styles.pointerOnly}>
-                Drag files and tap <kbd>Shift</kbd> while you hold them. <kbd>Ctrl</kbd>-click or draw a box to pick several.
+                Drag files and tap <kbd>Shift</kbd> for Kumo. Double-click to open, right-click for new files.
               </span>
               <span className={styles.touchOnly}>Tap a file to open Kumo.</span>
             </>
           )}
         </p>
-        <button type="button" className={styles.reset} onClick={reset} disabled={!changed && !menu}>
-          Reset
-        </button>
+        <span className={styles.barButtons}>
+          {!showTips && (
+            <button type="button" className={styles.reset} onClick={() => toggleTips(true)}>
+              Things to try
+            </button>
+          )}
+          <button type="button" className={styles.reset} onClick={reset}>
+            Reset
+          </button>
+        </span>
       </div>
     </div>
   );
 }
 
-function Wallpaper() {
+export function Wallpaper() {
   return (
     <svg className={styles.wallpaper} viewBox="0 0 1000 460" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
       <circle className={styles.wallSun} cx="780" cy="250" r="46" />
@@ -562,8 +977,8 @@ function Wallpaper() {
   );
 }
 
-/** A Windows-style taskbar with generic icons, Kumo in the notification area and the visitor's own clock. */
-function Taskbar() {
+/** A Windows-style taskbar: open windows, Kumo in the notification area and the visitor's own clock. */
+function Taskbar({ windows, active, titleOf, onSelect }: { windows: WindowState[]; active?: string; titleOf: (w: WindowState) => string; onSelect: (wid: string) => void }) {
   const [time, setTime] = useState("");
   useEffect(() => {
     const tick = () => setTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
@@ -572,32 +987,31 @@ function Taskbar() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className={styles.taskbar} aria-hidden="true">
+    <div className={styles.taskbar}>
       <div className={styles.taskApps}>
-        <span className={styles.startButton}>
+        <span className={styles.startButton} aria-hidden="true">
           <i />
           <i />
           <i />
           <i />
         </span>
-        <span className={styles.search}>Search</span>
-        <span className={styles.folderApp} />
+        <span className={styles.search} aria-hidden="true">
+          Search
+        </span>
+        <span className={styles.folderApp} aria-hidden="true" />
+        {windows.map((w) => (
+          <button key={w.wid} type="button" className={`${styles.taskWindow} ${active === w.wid ? styles.taskWindowOn : ""}`} onClick={() => onSelect(w.wid)} title={titleOf(w)} aria-label={`Show ${titleOf(w)}`}>
+            {w.app === "paint" ? <span className={styles.paintIcon} aria-hidden="true" /> : <Thumb file={w.file} size={20} />}
+          </button>
+        ))}
       </div>
-      <div className={styles.tray}>
+      <div className={styles.tray} aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/mascot/idle.png" alt="" width={18} height={18} />
         <span>{time}</span>
       </div>
     </div>
   );
-}
-
-function Thumb({ file }: { file: DemoFile }) {
-  if (file.kind === "folder") return <span className={styles.folder} aria-hidden="true" />;
-  if (file.kind === "pdf") return <span className={styles.pdf} aria-hidden="true">PDF</span>;
-  if (!file.image) return <span className={styles.picture} aria-hidden="true" />;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img className={styles.thumb} src={file.image.thumb} alt="" width={48} height={48} draggable={false} />;
 }
 
 function Glyph({ icon }: { icon: Category }) {
@@ -641,10 +1055,16 @@ function PagesDialog({ fileCount, onCancel, onConfirm }: { fileCount: number; on
       <h3 id="pages-title">Extract pages</h3>
       <label htmlFor="pages-input">{fileCount === 1 ? "Which pages do you want to keep?" : `Which pages do you want to keep from each of the ${fileCount} PDFs?`}</label>
       <input id="pages-input" autoFocus value={value} placeholder="1-3, 5" onChange={(e) => setValue(e.target.value)} aria-invalid={!!error} aria-describedby="pages-error" />
-      <p id="pages-error" className={styles.dialogError}>{error}</p>
+      <p id="pages-error" className={styles.dialogError}>
+        {error}
+      </p>
       <div className={styles.dialogActions}>
-        <button type="submit" className={styles.primary}>Extract</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="submit" className={styles.primary}>
+          Extract
+        </button>
+        <button type="button" onClick={onCancel}>
+          Cancel
+        </button>
       </div>
     </form>
   );
@@ -676,10 +1096,16 @@ function PasswordDialog({ onCancel, onConfirm }: { onCancel: () => void; onConfi
       <input id="password-input" type="password" autoFocus autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       <label htmlFor="password-repeat">Repeat the password</label>
       <input id="password-repeat" type="password" autoComplete="new-password" value={repeat} onChange={(e) => setRepeat(e.target.value)} aria-describedby="password-error" />
-      <p id="password-error" className={styles.dialogError}>{error}</p>
+      <p id="password-error" className={styles.dialogError}>
+        {error}
+      </p>
       <div className={styles.dialogActions}>
-        <button type="submit" className={styles.primary}>Protect</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="submit" className={styles.primary}>
+          Protect
+        </button>
+        <button type="button" onClick={onCancel}>
+          Cancel
+        </button>
       </div>
     </form>
   );

@@ -1,7 +1,6 @@
 import Landscape from "@/components/Landscape";
-import DesktopDemo from "@/components/DesktopDemo";
 import Doodle from "@/components/Doodle";
-import { links, site } from "@/lib/site";
+import { links } from "@/lib/site";
 
 export default function Home() {
   return (
@@ -18,7 +17,7 @@ export default function Home() {
               Explorer, tap <kbd>Shift</kbd>, and release on what you want done.
             </p>
             <div className="actions" id="download">
-              <a className="button button-primary" href={links.downloadX64}>
+              <a className="button button-primary" href="/download/">
                 <Doodle name="download" size={22} accent={false} />
                 Download for Windows
               </a>
@@ -34,57 +33,44 @@ export default function Home() {
         <Landscape />
       </div>
 
-      <section className="demo" aria-labelledby="demo-title">
-        <div className="wrap">
-          <div className="demo-intro">
-            <h2 id="demo-title">Try it here</h2>
+      <section className="demo" aria-labelledby="how-title">
+        <div className="wrap demo-details">
+          <h2 id="how-title">How it works</h2>
+          <ol className="steps">
+            <li>
+              <span className="step-title">Start dragging.</span> Pick up one or more files in File Explorer or on the
+              desktop.
+            </li>
+            <li>
+              <span className="step-title">Tap Shift.</span> Kumo&apos;s menu appears under the pointer, showing only what
+              works for those files.
+            </li>
+            <li>
+              <span className="step-title">Release on an action.</span> Results are saved as new files next to the
+              originals.
+            </li>
+            <li className="aside-step">
+              Holding Shift instead of tapping it keeps Windows&apos; usual move behaviour. You can also press{" "}
+              <kbd>Ctrl</kbd>&nbsp;<kbd>Alt</kbd>&nbsp;<kbd>K</kbd> for the files selected in Explorer, or open Kumo from the
+              notification area.
+            </li>
+          </ol>
+          <div className="try-demo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/mascot/idle.png" width={64} height={64} alt="" />
             <p>
-              A working copy of Kumo&apos;s menu on a pretend desktop. Pick up a file, tap Shift while you hold it, and drop it
-              on an action. Nothing leaves this page; the real Kumo does the same on your files.
+              <strong>Want to try it first?</strong> There&apos;s a pretend Windows desktop with a few sample pictures and
+              PDFs. Drag one and tap <kbd>Shift</kbd>.
             </p>
-          </div>
-
-          <DesktopDemo />
-
-          <div className="demo-details">
-            <ol className="steps">
-              <li>
-                <span className="step-title">Start dragging.</span> Pick up one or more files in File Explorer or on the
-                desktop.
-              </li>
-              <li>
-                <span className="step-title">Tap Shift.</span> Kumo&apos;s menu appears under the pointer, showing only what
-                works for those files.
-              </li>
-              <li>
-                <span className="step-title">Release on an action.</span> Results are saved as new files next to the
-                originals.
-              </li>
-              <li className="aside-step">
-                Holding Shift instead of tapping it keeps Windows&apos; usual move behaviour. You can also press{" "}
-                <kbd>Ctrl</kbd>&nbsp;<kbd>Alt</kbd>&nbsp;<kbd>K</kbd> for the files selected in Explorer, or open Kumo from the
-                notification area.
-              </li>
-            </ol>
-            <figure className="real-shot">
-              <div className="frame">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/assets/radial-menu.webp"
-                  width={340}
-                  height={380}
-                  loading="lazy"
-                  alt="Kumo's radial menu open on the Windows desktop for one image, with Convert, Rotate, Crop and Compress around the mascot"
-                />
-              </div>
-              <figcaption>The real menu on Windows, for one image.</figcaption>
-            </figure>
+            <a className="button button-secondary" href="/demo/">
+              Open the demo
+            </a>
           </div>
         </div>
       </section>
 
       <section className="features wrap" id="features" aria-labelledby="features-title">
-        <h2 id="features-title">What it does in {site.version}</h2>
+        <h2 id="features-title">What Kumo can do</h2>
 
         <div className="feature-row">
           <div className="feature-text">
@@ -111,7 +97,6 @@ export default function Home() {
                 alt="Kumo's Convert submenu for one JPEG image, offering PNG, WEBP, BMP and PDF, with WEBP highlighted"
               />
             </div>
-            <figcaption>Convert, opened for one photo.</figcaption>
           </figure>
         </div>
 
@@ -140,7 +125,6 @@ export default function Home() {
                 alt="Kumo's menu for two PDFs, with Convert, Merge PDFs, Split, Extract and Protect"
               />
             </div>
-            <figcaption>The menu for two PDFs.</figcaption>
           </figure>
         </div>
 
@@ -169,10 +153,9 @@ export default function Home() {
           <p>
             <strong>
               <Doodle name="hourglass" />
-              Not there yet.
+              Only relevant actions.
             </strong>
-            Video, audio, HEIC, TIFF, Word documents, PDF text extraction and image resizing are not supported in this
-            version.
+            The radial menu adapts to your selection and shows the actions available for those files.
           </p>
         </div>
       </section>

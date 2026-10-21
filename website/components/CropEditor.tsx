@@ -2,6 +2,7 @@
 
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { CropRegion, DemoFile } from "@/lib/kumo";
+import { ImageView } from "./DemoWindows";
 import styles from "./DesktopDemo.module.css";
 
 type Ratio = "free" | "original" | number;
@@ -118,8 +119,7 @@ export default function CropEditor({ file, onCancel, onCrop }: { file: DemoFile;
         onPointerUp={end}
         onPointerCancel={end}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image.full} alt="" draggable={false} />
+        <ImageView file={file} />
         <div
           className={styles.cropFrame}
           style={{ left: `${rect.x * 100}%`, top: `${rect.y * 100}%`, width: `${rect.width * 100}%`, height: `${rect.height * 100}%` }}
